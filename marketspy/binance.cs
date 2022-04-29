@@ -10,7 +10,7 @@ namespace marketspy
         public static async void te()
         {
             Binance.Net.Clients.BinanceSocketClient c = new BinanceSocketClient();
-            await c.UsdFuturesStreams.SubscribeToKlineUpdatesAsync("ethusdt", Binance.Net.Enums.KlineInterval.OneMinute, (ev) =>
+           var ra= await c.UsdFuturesStreams.SubscribeToKlineUpdatesAsync("ethusdt", Binance.Net.Enums.KlineInterval.OneMinute, (ev) =>
              {
                  var dat = ev.Data.Data;
                  var s = ev.Data.Symbol;
@@ -24,6 +24,15 @@ namespace marketspy
                  var f = dat.Final;
                  Console.WriteLine("recv=" + s + " t=" + time + " p=" + cp + " f=" + f);
              });
+            //ra.Data.ConnectionClosed;通过这个事件可以发现断线
+            
+                Console.Write("start SubscribeToKline");
+            var rest =new BinanceClient();
+            //rest.UsdFuturesApi.ExchangeData.PingAsync();//可以通过ping去发现 是否接通
+
+            DateTime time = DateTime.Now.ToUniversalTime();
+            var starttime = new DateTime(time.Year, time.Month, time.Day, 0, 0, 0, DateTimeKind.Utc);
+            var lines = await rest.UsdFuturesApi.ExchangeData.GetKlinesAsync("ethusdt", Binance.Net.Enums.KlineInterval.OneMinute, starttime, null, 60 * 12);
         }
     }
 }
