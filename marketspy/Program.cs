@@ -19,7 +19,9 @@ namespace marketspy
 
             var start = store.GetStartTime();
             var d = store.GetDayData(DateTime.Now);
-            while(true)
+
+            binance.te();
+            while (true)
             {
                 Console.ReadLine();
             }
