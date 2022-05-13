@@ -4,7 +4,7 @@ using System.Text;
 
 namespace marketspy
 {
-    struct Record
+    public struct Record
     {
         public double price_open;
         public double price_close;
@@ -41,9 +41,10 @@ namespace marketspy
         }
     }
 
-    class MarketDay
+    public class MarketDay
     {
         DateTime _day;
+        public UInt16 count; //maxsize=60x24
         public DateTime day
         {
             get
@@ -55,6 +56,18 @@ namespace marketspy
                 var ltime = value.ToUniversalTime();
                 _day = (new DateTime(ltime.Year, ltime.Month, ltime.Day, 0, 0, 0, ltime.Kind)).ToLocalTime();
             }
+        }
+        public MarketDay Clone()
+        {
+            MarketDay nday = new MarketDay();
+            nday.count = this.count;
+            nday._day = this._day;
+            nday.records = new Record[this.records.Length];
+            for(var i=0;i<nday.records.Length;i++)
+            {
+                nday.records[i] = this.records[i];
+            }
+            return nday;
         }
         public Record[] records;//record
 
@@ -95,7 +108,7 @@ namespace marketspy
 
         public byte[] ToValue()
         {
-            int totallen = 12 + 6 * 8 * 60 * 24;
+            int totallen = 12 + 2+ 6 * 8 * 60 * 24;
             byte[] result = new byte[totallen];
 
             var key = ToKey();
@@ -103,16 +116,19 @@ namespace marketspy
             {
                 result[i] = key[i];
             }
+            byte[] len = BitConverter.GetBytes(count);
+            result[12] = len[0];
+            result[13] = len[1];
             for (var i = 0; i < 60 * 24; i++)
             {
-                var seek = 12 + i * 6 * 8;
+                var seek = 14 + i * 6 * 8;
                 records[i].WriteTo(result, seek);
             }
             return result;
         }
         public static MarketDay Parse(byte[] data)
         {
-            int totallen = 12 + 6 * 8 * 60 * 24;
+            int totallen = 12 + 2 + 6 * 8 * 60 * 24;
             if (totallen != data.Length)
             {
                 return null;
@@ -127,10 +143,11 @@ namespace marketspy
             var utime = BitConverter.ToInt64(data, 4);
             MarketDay day = new MarketDay();
             day.day = DateTime.FromFileTimeUtc(utime).ToLocalTime();
+            day.count = BitConverter.ToUInt16(data, 12);
             day.records = new Record[60 * 24];
             for (var i = 0; i < 60 * 24; i++)
             {
-                var seek = 12 + i * 6 * 8;
+                var seek = 14 + i * 6 * 8;
                 day.records[i].ReadFrom(data, seek);
             }
             return day;
@@ -152,7 +169,6 @@ namespace marketspy
             var op = new RocksDbSharp.DbOptions().SetCreateIfMissing(true).SetCompression(RocksDbSharp.Compression.No);
             db = RocksDbSharp.RocksDb.Open(op, path);
 
-            Test();
 
         }
         public void Close()
@@ -162,12 +178,7 @@ namespace marketspy
             this.db = null;
             Console.WriteLine("==>DB close:" + this.path);
         }
-        public void Test()
-        {
-            var key = new byte[] { 1, 2, 3 };
-            this.db.Put(key, key);
-            var d = this.db.Get(key);
-        }
+
         public DateTime? GetStartTime()
         {
             var head = System.Text.Encoding.ASCII.GetBytes("beginday_");
@@ -193,7 +204,9 @@ namespace marketspy
         public MarketDay GetDayData(DateTime day)
         {
             var key = MarketDay.ToKey(day);
-            return MarketDay.Parse(db.Get(key));
+            var data = db.Get(key);
+            if (data == null) return null;
+            return MarketDay.Parse(data);
         }
         public void Clear()
         {
@@ -255,6 +268,17 @@ namespace marketspy
             wb.Put(key, value);
 
             db.Write(wb);
+        }
+        public void UpdateDay(MarketDay day)
+        {
+            var end = GetEndTime();
+            if (day.day != end)
+                throw new Exception("only can update last day.");
+
+            var key = day.ToKey();
+            var value = day.ToValue();
+
+            db.Put(key, value);
         }
     }
 }

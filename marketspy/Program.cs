@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace marketspy
 {
     internal class Program
     {
-        static store store = new store();
+        static Recorder recorder = new Recorder();
+       
         static void Main(string[] args)
         {
             //1.启动程序需要配置一个启动时间
@@ -16,23 +18,50 @@ namespace marketspy
 
             //5.历史模式，每24小时数据写入一次数据。实时模式每15分钟写入一次数据，需要知道数据完成度
 
-            store.Open();
-            Console.WriteLine("Hello World!");
+            DateTime startday;
+            try
+            {
+                var days = args[0].Split('-',StringSplitOptions.RemoveEmptyEntries);
+                startday = new DateTime(int.Parse(days[0]), int.Parse(days[1]), int.Parse(days[2]), 0, 0, 0, DateTimeKind.Utc);
+            }
+            catch
+            {
+                Console.WriteLine("error params startday:\n   sample: marketspy 2021-1-1");
+                return;
+            }
+            Console.WriteLine("startday(utc)="+startday);
+            Console.WriteLine("startday(local)=" + startday.ToLocalTime());
+            recorder.Begin(startday);
 
-            store.Clear();
-
-            var day = new MarketDay();
-            day.day = DateTime.Now;
-            day.records = new Record[60 * 24];
-            store.WriteDay(day);
-
-            var start = store.GetStartTime();
-            var d = store.GetDayData(DateTime.Now);
-
-            binance.te();
+            StateBar();
+           
             while (true)
             {
                 Console.ReadLine();
+            }
+        }
+        static async void StateBar()
+        {
+            while (true)
+            {
+                var curtop = Console.CursorTop;
+                var curleft = Console.CursorLeft;
+
+                
+                Console.SetCursorPosition(curleft, curtop-1);
+               
+                Console.Write("[state] symbol=" + recorder.symbol);
+               
+                var r = recorder.GetLastRealRecord(out UInt16 index,out bool final);
+                if(r!=null)
+                {
+                    Console.Write(" i=" + index);
+                   Console.Write("  price=" + r.Value.price_close);
+                }
+                  
+
+                Console.WriteLine();
+                await Task.Delay(1000);
             }
         }
     }

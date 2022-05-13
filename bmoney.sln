@@ -5,6 +5,8 @@ VisualStudioVersion = 17.0.31919.166
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "marketspy", "marketspy\marketspy.csproj", "{D2D0771F-D057-44AC-B05D-4313190A9423}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "stickview", "stickview\stickview.csproj", "{F8F49DB4-29DB-4227-98B8-B10B32A34715}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{D2D0771F-D057-44AC-B05D-4313190A9423}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D2D0771F-D057-44AC-B05D-4313190A9423}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D2D0771F-D057-44AC-B05D-4313190A9423}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8F49DB4-29DB-4227-98B8-B10B32A34715}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8F49DB4-29DB-4227-98B8-B10B32A34715}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8F49DB4-29DB-4227-98B8-B10B32A34715}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8F49DB4-29DB-4227-98B8-B10B32A34715}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
