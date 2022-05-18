@@ -78,15 +78,15 @@ namespace marketspy
         }
         MarketDayRealtime realday = new MarketDayRealtime();
 
-        public MarketDay GetHistoryData(DateTime _time)
+        public MarketDay GetHistoryData(DateTime day)
         {
-            var time = GetUtcDay(_time);
-            if (time == lastday.day)
+            var time = GetUtcDay(day);
+            if (lastday != null && time == lastday.day)
                 return lastday;
             else
                 return store.GetDayData(time);
         }
-        public DateTime? GetBeginTime()
+        public DateTime? GetStartTime()
         {
             return store.GetStartTime();
         }
@@ -129,6 +129,11 @@ namespace marketspy
         {
             get;
             private set;
+        }
+        public static DateTime GetTime(DateTime src, int mindex)
+        {
+            var ut = src.ToLocalTime();
+            return ut + new TimeSpan(0, 0, mindex, 0, 0);
         }
         public static DateTime GetUtcDay(DateTime time)
         {

@@ -16,14 +16,17 @@ namespace stickview
         {
             InitializeComponent();
         }
-
+        cookdata data = new cookdata();
         private void Form1_Load(object sender, EventArgs e)
         {
 
             chart1.Images.Add(new System.Windows.Forms.DataVisualization.Charting.NamedImage("hi", imageList1.Images[0]));
 
+            data.Init();
 
-            ViewMgr.Init(chart1);
+            ViewMgr.Init(chart1,timeleft,timeright,data);
+
+            timer1.Enabled = true;
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -31,41 +34,32 @@ namespace stickview
             ViewMgr.FillData_Test();
         }
 
-        private void chart1_CursorPositionChanged(object sender, System.Windows.Forms.DataVisualization.Charting.CursorEventArgs e)
-        {
-            if (e.ChartArea == chart1.ChartAreas[0])
-            {
-                chart1.ChartAreas[1].CursorX.SelectionStart = e.NewSelectionStart;
-                chart1.ChartAreas[1].CursorX.SelectionEnd = e.NewSelectionEnd;
-            }
-        }
-
-        private void chart1_SelectionRangeChanged(object sender, System.Windows.Forms.DataVisualization.Charting.CursorEventArgs e)
-        {
-
-        }
-
-        private void chart1_GetToolTipText(object sender, System.Windows.Forms.DataVisualization.Charting.ToolTipEventArgs e)
-        {
-
-        }
-
-        private void chart1_Click(object sender, EventArgs e)
-        {
-
-        }
 
         private void chart1_MouseClick(object sender, MouseEventArgs e)
         {
-            var hit = chart1.HitTest(e.X, e.Y);
-            chart1.ChartAreas[1].CursorX.SetCursorPosition(chart1.ChartAreas[0].CursorX.Position);
-            chart1.ChartAreas[2].CursorX.SetCursorPosition(chart1.ChartAreas[0].CursorX.Position);
+            ViewMgr.Hit(e.X, e.Y);
 
         }
 
-        private void splitContainer2_Panel2_Paint(object sender, PaintEventArgs e)
+        private void chart1_AxisViewChanged(object sender, System.Windows.Forms.DataVisualization.Charting.ViewEventArgs e)
+        {
+            ViewMgr.AxisChange(e.Axis);
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
         {
 
+            this.datainfo.Text = data.GetStateString();
+         
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            if(Enum.TryParse<KLineSpan>(this.comboBox1.Text, out KLineSpan span))
+            {
+                ViewMgr.FillData(this.dateTimePickerFrom.Value, this.dateTimePickerTo.Value, span);
+            }
+            
         }
     }
 }
