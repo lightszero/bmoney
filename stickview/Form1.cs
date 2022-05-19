@@ -57,9 +57,17 @@ namespace stickview
         {
             if(Enum.TryParse<KLineSpan>(this.comboBox1.Text, out KLineSpan span))
             {
-                ViewMgr.FillData(this.dateTimePickerFrom.Value, this.dateTimePickerTo.Value, span);
+                ViewMgr.FillData(this.dateTimePickerTo.Value, span);
             }
             
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            if (Enum.TryParse<KLineSpan>(this.comboBox1.Text, out KLineSpan span))
+            {
+                ViewMgr.FillData(DateTime.Today+TimeSpan.FromDays(1), span);
+            }
         }
     }
 }

@@ -124,19 +124,24 @@ namespace stickview
             double  _scale = (int)TimeTool.GetSpan(span).TotalMilliseconds * 10000;
             area_macd.AxisX.ScaleView.Size = 100* _scale;
         }
-        public static void FillData(DateTime from, DateTime to, KLineSpan span)
+        public static void FillData( DateTime to, KLineSpan span)
         {
             InitScroll(span);
             var _usespan = TimeTool.GetSpan(span);
-            DateTime rfrom = TimeTool.GetSpanTime(from, span);
             DateTime rto = TimeTool.GetSpanTime(to + _usespan, span);
 
+
+            DateTime begin = new DateTime(2021, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             currentSpan = span;
             s_kline.Points.Clear();
             s_vol.Points.Clear();
             s_macd.Points.Clear();
             s_macd_l1.Points.Clear();
-            for (DateTime time = rfrom; time <= rto; time += _usespan)
+
+
+            int limit = 1000;
+            int counter = 0;
+            for (DateTime time = rto; time >=begin; time -= _usespan)
             {
 
                 var id = time.ToFileTimeUtc();
@@ -158,7 +163,11 @@ namespace stickview
                     s_vol.Points.AddXY(id, rec.Value.volume);
                     s_macd.Points.AddXY(id, rec.Value.volume);
                     s_macd_l1.Points.AddXY(id, rec.Value.volume);
-
+                    counter++;
+                    if(counter>limit)
+                    {
+                        break;
+                    }
                 }
             }
 

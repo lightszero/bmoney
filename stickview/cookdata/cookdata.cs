@@ -10,7 +10,8 @@ class cookdata
     marketspy.Recorder recoder = new marketspy.Recorder();
     public void Init()
     {
-        recoder.Begin(new DateTime(2021, 1, 1, 0, 0, 0, DateTimeKind.Local));
+        var time = 2021;
+        recoder.Begin(time);
     }
     public string symbol
     {
@@ -22,24 +23,24 @@ class cookdata
     public string GetStateString()
     {
         var txt = "";
-        var time = recoder.GetStartTime();
+        var time = recoder.startTime;
         if (time == null)
         {
             txt = "data not init.";
         }
-        var time2 = recoder.GetEndTime();
-        var timecool = marketspy.Recorder.GetUtcDay(DateTime.Now).ToLocalTime();
+        var time2 = recoder.parseTime;
+        var timecool = TimeTool.GetUtcDay(DateTime.Now).ToLocalTime();
 
         if (time2 != null)
         {
-            txt = time.Value.ToLocalTime().ToString();
-            txt += " --- " + time2.Value.ToLocalTime().ToString(); ;
+            txt = time.ToLocalTime().ToString();
+            txt += " --- " + time2.ToLocalTime().ToString(); ;
 
-            if (timecool == time2)
+            if (timecool.ToUniversalTime() == time2)
             {
                 if (recoder.GetLastRealRecord(out ushort index, out bool final) != null)
                 {
-                    var _time = marketspy.Recorder.GetTime(timecool, index);
+                    var _time = TimeTool.GetTime(timecool, index);
                     txt += "  realstick: " + index + " --- " + _time.ToLocalTime().ToString();
                 }
                 else
@@ -55,38 +56,29 @@ class cookdata
 
     public DateTime? GetStartTime()
     {
-        return recoder.GetStartTime();
+        return recoder.startTime;
     }
     public DateTime? GetEndTime()
     {
-        return recoder.GetEndTime();
+        return recoder.parseTime;
     }
-   
 
 
-    marketspy.Record? GetKLine1(DateTime begin, out bool final)
+    CacheRecord? GetKLine1(DateTime begin, out bool final)
     {
         var index = TimeTool.GetUtcDayIndex(begin, out DateTime utcday);
-        var timecool = marketspy.Recorder.GetUtcDay(DateTime.Now);
+        var timecool = TimeTool.GetUtcDay(DateTime.Now);
         if (timecool == utcday)
         {//realtime data
             return recoder.GetRealRecord((ushort)index, out final);
         }
         final = true;
-        if (utcday > GetStartTime()?.ToUniversalTime() && utcday <= GetEndTime()?.ToUniversalTime())
-        {
-            var hdata = recoder.GetHistoryData(utcday);
-            return hdata.records[index];
-        }
-        else
-        {
-            return null;
-        }
-
+        return recoder.GetHistoryData(begin);
+     
     }
-    public  marketspy.Record? GetKLine(KLineSpan span,DateTime begin,out bool final )
+    public CacheRecord? GetKLine(KLineSpan span, DateTime begin, out bool final)
     {
-        if(span== KLineSpan.Minute_1)
+        if (span == KLineSpan.Minute_1)
         {
             return GetKLine1(begin, out final);
         }

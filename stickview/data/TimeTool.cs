@@ -40,6 +40,15 @@ public class TimeTool
         var ut = time.ToUniversalTime();
         return new DateTime(ut.Year, ut.Month, ut.Day, 0, 0, 0, DateTimeKind.Utc);
     }
+    public static DateTime GetUtcYear(DateTime time)
+    {
+        var ut = time.ToUniversalTime();
+        return new DateTime(ut.Year, 1,1, 0, 0, 0, DateTimeKind.Utc);
+    }
+    public static int GetNowYear()
+    {
+        return DateTime.Now.ToUniversalTime().Year;
+    }
     public static ushort GetUtcDayIndex(DateTime time, out DateTime utc)
     {
         utc = GetUtcDay(time);

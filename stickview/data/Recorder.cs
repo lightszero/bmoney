@@ -9,7 +9,6 @@ namespace marketspy
 {
     public class Recorder
     {
-        store store = new store();
         static BinanceClient rest = new BinanceClient();
         static BinanceSocketClient socket = new BinanceSocketClient();
         public string symbol
@@ -17,11 +16,11 @@ namespace marketspy
             get;
             private set;
         }
-        MarketDay lastday;//最后一天的历史数据
 
+        Dictionary<int, CachedRecordArray> cachemap = new Dictionary<int, CachedRecordArray>();
         class RecordReal
         {
-            public Record record;
+            public CacheRecord record;
             public bool final;
         }
         class MarketDayRealtime
@@ -55,7 +54,7 @@ namespace marketspy
                     return -1;
                 }
             }
-            public Record? GetRecord(UInt16 index, out bool final)
+            public CacheRecord? GetRecord(UInt16 index, out bool final)
             {
                 final = false;
                 if (records.ContainsKey(index) == false)
@@ -63,7 +62,7 @@ namespace marketspy
                 final = records[index].final;
                 return records[index].record;
             }
-            public Record? GetLastResult(out UInt16 index, out bool final)
+            public CacheRecord? GetLastResult(out UInt16 index, out bool final)
             {
                 index = 0;
                 final = false;
@@ -78,31 +77,23 @@ namespace marketspy
         }
         MarketDayRealtime realday = new MarketDayRealtime();
 
-        public MarketDay GetHistoryData(DateTime day)
+        public CacheRecord? GetHistoryData(DateTime day)
         {
-            var time = GetUtcDay(day);
-            if (lastday != null && time == lastday.day)
-                return lastday;
-            else
-                return store.GetDayData(time);
+            var time = TimeTool.GetUtcYear(day);
+            int mindex = (int)((day.ToUniversalTime() - time).TotalMinutes);
+            if (cachemap.ContainsKey(time.Year) == false)
+                return null;
+            return cachemap[time.Year].GetItem(mindex);
         }
-        public DateTime? GetStartTime()
-        {
-            return store.GetStartTime();
-        }
-        public DateTime? GetEndTime()
-        {
-            return store.GetEndTime();
-        }
-        public Record? GetRealRecord(UInt16 index, out bool final)
+
+        public CacheRecord? GetRealRecord(UInt16 index, out bool final)
         {
             return realday.GetRecord(index, out final);
         }
-        public Record? GetLastRealRecord(out UInt16 index, out bool final)
+        public CacheRecord? GetLastRealRecord(out UInt16 index, out bool final)
         {
             return realday.GetLastResult(out index, out final);
         }
-        bool[] currentDayTag = new bool[60 * 24];//实时模式标志位
         static void Log(string text)
         {
             Console.ForegroundColor = ConsoleColor.White;
@@ -130,80 +121,71 @@ namespace marketspy
             get;
             private set;
         }
-        public static DateTime GetTime(DateTime src, int mindex)
-        {
-            var ut = src.ToLocalTime();
-            return ut + new TimeSpan(0, 0, mindex, 0, 0);
-        }
-        public static DateTime GetUtcDay(DateTime time)
-        {
-            var ut = time.ToUniversalTime();
-            return new DateTime(ut.Year, ut.Month, ut.Day, 0, 0, 0, DateTimeKind.Utc);
-        }
-        public void Begin(DateTime time, string symbol = "ethusdt")
+
+
+        public void Begin(int beginyear, string symbol = "ethusdt")
         {
             this.symbol = symbol;
-            parseTime = startTime = GetUtcDay(time);
+            parseTime = startTime = new DateTime(beginyear, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            int nowyear = TimeTool.GetNowYear();
 
 
-            store.Open();
-            LogHard("db opened");
-
-            var begintime = store.GetStartTime();
-            var endtime = store.GetEndTime();
-            if (begintime != null)
+            for (var i = beginyear; i <= nowyear; i++)
             {
-                if (parseTime < begintime.Value.ToUniversalTime())
-                    throw new Exception("已经初始化过数据，而你要的时间太早了");
-                parseTime = GetUtcDay(endtime.Value);
+                var name = i + "_kline_m1";
+                var cacefile = new CachedRecordArray(name, 366 * 24 * 60);
+                cachemap.Add(i, cacefile);
+                cacefile.Load();
+                var yeartime = new DateTime(i, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                var cacheendtime = yeartime + TimeSpan.FromMinutes(cachemap[i].Count);
+                if (cachemap[i].Count > 0)
+                {
+                    parseTime = TimeTool.GetUtcDay(cacheendtime);
+                }
             }
+
+            LogHard("db inited parseTime=" + parseTime);
+
             SocketRealtimeDataWatcher();
             RestHistoryDataWatcher();
         }
+
         async void RestHistoryDataWatcher()
         {
+            CacheRecord[] records = new CacheRecord[60 * 24];
+            int recordcount = 0;
 
             while (true)
             {
-                MarketDay currentDay = store.GetDayData(parseTime);
-                if (currentDay == null)
-                {
-                    currentDay = new MarketDay();
-                    currentDay.day = parseTime;
-                    currentDay.records = new Record[60 * 24];
-                    store.WriteDay(currentDay);
-                }
 
-                if (currentDay.count < 60 * 12)
+
+                if (recordcount < 60 * 12)
                 {
                     //缺上半天数据
-                    await GetHistoryData(symbol, currentDay, parseTime);
-                    if (currentDay.count >= 60 * 12)//够数才写入
+                    int count = await GetHistoryData(symbol, records, parseTime);
+                    recordcount = count;
+                    if (recordcount >= 60 * 12)//够数才写入
                     {
-                        try
-                        {
-                            store.UpdateDay(currentDay);
-                        }
-                        catch
-                        {
-                            store.WriteDay(currentDay);
-                        }
-
+                        cachemap[parseTime.Year].UpdateRecords(records, 0, 60 * 12);
+                        cachemap[parseTime.Year].Apply();
                         Log("write halfday:" + parseTime + "[am]");
+                      
                     }
 
                 }
 
-                if (currentDay.count >= 60 * 12)//上半天数据完成才有下面的
+                if (recordcount >= 60 * 12)//上半天数据完成才有下面的
                 {
                     //缺下半天数据
                     var timepm = new DateTime(parseTime.Year, parseTime.Month, parseTime.Day, 12, 0, 0, DateTimeKind.Utc);
-                    if (timepm < DateTime.Now && currentDay.count < 60 * 24)
+                    if (timepm < DateTime.Now && recordcount < 60 * 24)
                     {
-                        await GetHistoryData(symbol, currentDay, timepm);
-                        if (currentDay.count == 60 * 24)//够数才写入
+                        int count = await GetHistoryData(symbol, records, timepm);
+                        recordcount = 60 * 12 + count;
+                        if (recordcount == 60 * 24)//够数才写入
                         {
-                            store.UpdateDay(currentDay);
+                            cachemap[parseTime.Year].UpdateRecords(records,720,60*12);
+                            cachemap[parseTime.Year].Apply();
                             Log("write halfday:" + parseTime + "[pm]");
                         }
                     }
@@ -212,21 +194,21 @@ namespace marketspy
 
 
                 //如果数据补齐就下一天
-                if (currentDay.count < 60 * 24)
+                if (recordcount < 60 * 24)
                 {
                     LogHard("历史数据已经追上");
-                    var nowday = GetUtcDay(DateTime.Now);
+                    var nowday = TimeTool.GetUtcDay(DateTime.Now);
                     while (nowday == parseTime)
                     {
                         await Task.Delay(1000);
-                        nowday = GetUtcDay(DateTime.Now);
+                        nowday = TimeTool.GetUtcDay(DateTime.Now);
                     }
                 }
                 else
                 {
-                    lastday = currentDay.Clone();
                     //下半天数据补齐就可以跳走了
                     parseTime += TimeSpan.FromDays(1);
+                    recordcount = 0;
                 }
 
 
@@ -244,7 +226,7 @@ namespace marketspy
                     var timedec = (dat.OpenTime.ToUniversalTime() - realday.begintime);
                     if (timedec.TotalDays > 1.0)//切换nowday
                     {
-                        var nowday = GetUtcDay(DateTime.Now);
+                        var nowday = TimeTool.GetUtcDay(DateTime.Now);
 
                         realday.begintime = nowday;
                         realday.records.Clear();
@@ -291,7 +273,7 @@ namespace marketspy
             }
 
         }
-        static async Task GetHistoryData(string symbol, MarketDay day, DateTime begin, int count = 60 * 12)
+        static async Task<int> GetHistoryData(string symbol, CacheRecord[] records, DateTime begin, int count = 60 * 12)
         {
             if (begin.Kind != DateTimeKind.Utc)
                 throw new Exception("must use utctime");
@@ -305,21 +287,23 @@ namespace marketspy
                     continue;
                 }
                 var ubegin = begin;
-                var uday = GetUtcDay(day.day);
+                var uday = TimeTool.GetUtcDay(begin);
                 var beginindex = (UInt16)(ubegin - uday).TotalMinutes;
                 IList<Binance.Net.Objects.Models.Futures.BinanceFuturesUsdtKline> datas = result.Data as IList<Binance.Net.Objects.Models.Futures.BinanceFuturesUsdtKline>;
 
-                day.count = (UInt16)(beginindex + datas.Count);
-                for (var i = beginindex; i < day.count; i++)
+                int yearindex = (int)(ubegin - TimeTool.GetUtcYear(begin)).TotalMinutes;
+
+                for (var i = 0; i <  datas.Count; i++)
                 {
-                    day.records[i].price_open = (double)datas[i - beginindex].OpenPrice;
-                    day.records[i].price_close = (double)datas[i - beginindex].ClosePrice;
-                    day.records[i].price_high = (double)datas[i - beginindex].HighPrice;
-                    day.records[i].price_low = (double)datas[i - beginindex].LowPrice;
-                    day.records[i].volume = (double)datas[i - beginindex].Volume;
-                    day.records[i].volume_buy = (double)datas[i - beginindex].TakerBuyBaseVolume;
+                    records[beginindex + i].index = yearindex + i;
+                    records[beginindex + i].price_open = (double)datas[i].OpenPrice;
+                    records[beginindex + i].price_close = (double)datas[i].ClosePrice;
+                    records[beginindex + i].price_high = (double)datas[i].HighPrice;
+                    records[beginindex + i].price_low = (double)datas[i].LowPrice;
+                    records[beginindex + i].volume = (double)datas[i].Volume;
+                    records[beginindex + i].volume_buy = (double)datas[i].TakerBuyBaseVolume;
                 }
-                return;
+                return datas.Count;
             }
 
         }
@@ -337,7 +321,7 @@ namespace marketspy
                     continue;
                 }
                 var ubegin = begin;
-                var uday = GetUtcDay(day.begintime);
+                var uday = TimeTool.GetUtcDay(day.begintime);
                 var beginindex = (UInt16)(ubegin - uday).TotalMinutes;
                 IList<Binance.Net.Objects.Models.Futures.BinanceFuturesUsdtKline> datas = result.Data as IList<Binance.Net.Objects.Models.Futures.BinanceFuturesUsdtKline>;
 
