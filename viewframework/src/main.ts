@@ -1,12 +1,15 @@
 
 import * as klinecharts from "klinecharts"
-import { ChartView } from "./chartview";
+import { ChartView, input_IndicatorData, input_IndicatorDesc,input_IndicatorDescs } from "./chartview";
 //import { generateTestData } from "./testdata";
 
-//外部输入数据
-declare var input_klineDatas:klinecharts.KLineData[];
-var view:ChartView;
 
+//外部输入数据,依赖名字，名字不能改
+declare var input_klineDatas:klinecharts.KLineData[];
+declare var input_IndicatorDatas:input_IndicatorData[];
+declare var input_IndicatorDescs:input_IndicatorDescs;
+
+var view:ChartView;
 function annotationDrawExtend(ctx: CanvasRenderingContext2D, coordinate: klinecharts.Coordinate, text: string): void
 {
     ctx.font = '12px Roboto';
@@ -55,6 +58,8 @@ window.onload = () =>
     let dataList = input_klineDatas;//generateTestData();
 
     view.AddKData(input_klineDatas);
+    view.RegADataDesc(input_IndicatorDescs);
+    view.AddAData(input_IndicatorDatas);
 
     let p = dataList[dataList.length - 1];
 
