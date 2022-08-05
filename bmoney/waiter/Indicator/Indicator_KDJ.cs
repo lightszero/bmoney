@@ -46,33 +46,7 @@ namespace BMoney.Indicator
 
         public double[] GetValues(CandlePool input, int indicatorIndex, int candleIndex)
         {
-            IndicatorUtil.GetMinMaxPrice(input, candleIndex, N, out double min, out double max);
-            var candle = input.GetCandle(candleIndex);
-            double RSV = 0;
-            double k = 50;
-            double d = 50;
-            double j = 0;
-            double km1 = 0;
-            double dm1 = 0;
-
-
-            if (candleIndex > 0)
-            {
-                var candlem1 = input.GetCandleWithIndicator(candleIndex - 1);
-                km1 = candlem1.values[indicatorIndex].value[0];
-                dm1 = candlem1.values[indicatorIndex].value[1];
-            }
-            RSV = (candle.close - min) / (max - min) * 100;
-            k = km1 * (M1 - 1) / M1 + RSV / M1;
-            d = dm1 * (M2 - 1) / M2 + k / M2;
-            j = 3.0 * k - 2.0 * d;
-            if (k < 0) k = 0;
-            if (k > 100) k = 100;
-            if (d < 0) d = 0;
-            if (d > 100) d = 100;
-            if (j < 0) j = 0;
-            if (j > 100) j = 100;
-            return new double[] { k, d, j };
+            return IndicatorUtil.CalcKDJ(input, indicatorIndex, candleIndex, N, M1, M2);
         }
 
     }

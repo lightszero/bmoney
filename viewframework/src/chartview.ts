@@ -75,18 +75,21 @@ export class ChartView {
 
     InitIndicator() {
         //开指标
-        let paneid = this.chart.createTechnicalIndicator("MACD");
-
+        
 
         this.chart.createTechnicalIndicator("VOL");
+       
+       
+        let paneid = this.chart.createTechnicalIndicator("MACD");
+        //this.chart.createTechnicalIndicator("EMA");
 
         //主图混
         this.chart.createTechnicalIndicator({ name: "MA", calcParams: [5, 10] }, true, { id: 'candle_pane' });
 
         //覆盖混在别的图上
-        if (paneid != null) {
-            this.chart.createTechnicalIndicator('KDJ', true, { id: paneid })
-        }
+        // if (paneid != null) {
+        //     this.chart.createTechnicalIndicator('KDJ', true, { id: paneid })
+        // }
 
         // // 添加一个指标模板
         // this.chart.addTechnicalIndicatorTemplate({
