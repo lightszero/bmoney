@@ -8,15 +8,15 @@ namespace BMoney.Indicator
 {
 
 
-    public class Indicator_EMA : IIndicator
+    public class Indicator_MACD : IIndicator
     {
-        public string Name => "EMA";
+        public string Name => "MACD";
 
-        public string Description => "EMA指标";
+        public string Description => "MACD指标";
 
         public string[] GetInitParamDefine()
         {
-            return new string[] { "N1=6", "N2=12", "N3=20" };
+            return new string[] { "N1=12", "N2=26", "N3=9" };
         }
         public string[] GetParamValue()
         {
@@ -24,7 +24,7 @@ namespace BMoney.Indicator
         }
         public string[] GetValuesDefine()
         {
-            return new string[] { $"EMA({N1})", $"EMA({N2})", $"EMA({N3})" };
+            return new string[] { $"*EMA({N1})", $"*EMA({N2})","DIF","DEA","MACD" };
         }
 
 
@@ -35,9 +35,9 @@ namespace BMoney.Indicator
         {
             if (Param == null || Param.Length == 0)
             {
-                N1 = 6;
-                N2 = 12;
-                N3 = 20;
+                N1 = 12;
+                N2 = 26;
+                N3 = 9;
             }
             else
             {
@@ -52,8 +52,11 @@ namespace BMoney.Indicator
         {
             double ema1 = IndicatorUtil.CalcEMA(input, indicatorIndex, candleIndex, 0, N1);
             double ema2 = IndicatorUtil.CalcEMA(input, indicatorIndex, candleIndex, 1, N2);
-            double ema3 = IndicatorUtil.CalcEMA(input, indicatorIndex, candleIndex, 2, N3);
-            return new double[] { ema1, ema2, ema3 };
+            double dif = ema1 - ema2;
+            int deaindex = 3;
+            double dea = IndicatorUtil.CalcEMAFromX(input, indicatorIndex,  candleIndex, deaindex,dif,  N3);
+            double bar = (dif - dea) * 2;
+            return new double[] { ema1, ema2, dif, dea ,bar};
         }
 
     }

@@ -75,5 +75,21 @@ namespace BMoney.Indicator
             return Y;
 
         }
+        public static double CalcEMAFromX(CandlePool input, int techIndex, int candleIndex, int emaindex, double X, int N)
+        {
+            //var candle = input.GetCandleWithIndicator(candleIndex);
+            //var X = candle.values[techIndex].value[difIndex];
+
+            double YM1 = 0;
+            if (candleIndex > 0)
+            {
+                var candlem1 = input.GetCandleWithIndicator(candleIndex - 1);
+                YM1 = candlem1.values[techIndex].value[emaindex];
+            }
+            var Y = (2 * X + (N - 1) * YM1) / (N + 1);
+            //Y =[2 * X + (N - 1) * Y']/(N+1)
+            return Y;
+
+        }
     }
 }

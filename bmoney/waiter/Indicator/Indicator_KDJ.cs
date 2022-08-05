@@ -18,9 +18,13 @@ namespace BMoney.Indicator
         {
             return new string[] { "N=9", "M1=3", "M2=3" };
         }
+        public string[] GetParamValue()
+        {
+            return new string[] { N.ToString(), M1.ToString(), M2.ToString() };
+        }
         public string[] GetValuesDefine()
         {
-            return new string[] { $"K({N})", $"D({M1})", $"J({M2})" };
+            return new string[] { "K", "D", "J" };
         }
 
 
