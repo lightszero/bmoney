@@ -114,34 +114,105 @@ namespace BMoney
         //生成数据
         static string GenDataFile(CandlePool pool)
         {
+            //导出一个js文件，剩下的事情交给JS端去处理了
             StringBuilder sb = new StringBuilder();
-            sb.Append("input_klineDatas = \n");
+
             var candlejsonarray = new Newtonsoft.Json.Linq.JArray();
+            var indicatorjsonarray = new Newtonsoft.Json.Linq.JArray();
+            
+            Newtonsoft.Json.Linq.JObject indicatordesc=null;
+
             int lastid = pool.GetLastestCandleID(out bool f);
             for (var i = 0; i <= lastid; i++)
             {
                 var candle = pool.GetCandleWithIndicator(i);
-                var candlejson = new Newtonsoft.Json.Linq.JObject();
-                candlejson["timestamp"] = ToJSTime(candle.candle.time);
-
-                candlejson["open"] = candle.candle.open;
-                candlejson["high"] = candle.candle.high;
-                candlejson["close"] = candle.candle.close;
-                candlejson["low"] = candle.candle.low;
-                candlejson["volume"] = candle.candle.volume;
+                var candlejson = CandleToJson(candle);
 
                 candlejsonarray.Add(candlejson);
+
+                var indicatorjson = IndicatorToJson(candle);
+                indicatorjsonarray.Add(indicatorjson);
+                if (i == 0)
+                {
+                    indicatordesc = IndicatorDescToJson(candle);
+                }
             }
 
+            //==output input_klineDatas==
+            sb.Append("input_klineDatas = \n");
             sb.Append(candlejsonarray.ToString(Newtonsoft.Json.Formatting.Indented));
+            sb.AppendLine(";");
 
+
+            //==output input_IndicatorDatas==
+            sb.Append("input_IndicatorDatas = \n");
+            sb.Append(indicatorjsonarray.ToString(Newtonsoft.Json.Formatting.Indented));
+            sb.AppendLine(";");
+
+            sb.Append("input_IndicatorDescs = \n");
+            sb.Append(indicatordesc.ToString(Newtonsoft.Json.Formatting.Indented));
+            sb.AppendLine(";");
 
             return sb.ToString();
+        }
+
+        static Newtonsoft.Json.Linq.JObject CandleToJson(CandleWithIndicator candle)
+        {
+            var candlejson = new Newtonsoft.Json.Linq.JObject();
+            candlejson["timestamp"] = ToJSTime(candle.candle.time);
+
+            candlejson["open"] = candle.candle.open;
+            candlejson["high"] = candle.candle.high;
+            candlejson["close"] = candle.candle.close;
+            candlejson["low"] = candle.candle.low;
+            candlejson["volume"] = candle.candle.volume;
+            return candlejson;
+        }
+        static Newtonsoft.Json.Linq.JObject IndicatorToJson(CandleWithIndicator candle)
+        {
+            var json = new Newtonsoft.Json.Linq.JObject();
+            foreach (var d in candle.values)
+            {
+                var varray = new Newtonsoft.Json.Linq.JArray();
+                foreach(var v in d.value)
+                {
+                    varray.Add(v);
+                }
+                json[d.indicator.Name] = varray;
+            }
+            return json;
+        }
+        static Newtonsoft.Json.Linq.JObject IndicatorDescToJson(CandleWithIndicator candle)
+        {
+            var json = new Newtonsoft.Json.Linq.JObject();
+            foreach (var d in candle.values)
+            {
+                var obj = new Newtonsoft.Json.Linq.JObject();
+                obj["name"] = d.indicator.Name;
+                obj["desc"] = d.indicator.Description;
+                var initarray = new Newtonsoft.Json.Linq.JArray();
+                foreach (var def in d.indicator.GetInitParamDefine())
+                {
+                    initarray.Add(def);
+                }
+                obj["initparam"] = initarray;
+
+                var valuesarray=new Newtonsoft.Json.Linq.JArray();
+                foreach (var def in d.indicator.GetValuesDefine())
+                {
+                    valuesarray.Add(def);
+                }
+                obj["values"] = valuesarray;
+
+                json[d.indicator.Name] =obj;
+            }
+
+            return json;
         }
         static double ToJSTime(DateTime time)
         {
             var tick1 = time.ToUniversalTime();
-            var from =new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            var from = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             return (tick1 - from).TotalMilliseconds;
         }
     }
