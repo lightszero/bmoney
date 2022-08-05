@@ -25,7 +25,7 @@ namespace BMoney
                 if (candle.low < 0)
                     candle.low = 0;
 
-                candle.volume = ran.NextDouble();
+                candle.volume = (int)(ran.NextDouble()*10000);
                 pool.Push(candle, true);
             }
         }
