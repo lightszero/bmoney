@@ -75,12 +75,12 @@ export class ChartView {
 
     InitIndicator() {
         //开指标
-        
+
 
         this.chart.createTechnicalIndicator("VOL");
-       
-       
-        let paneid = this.chart.createTechnicalIndicator("MACD");
+
+
+        //let paneid = this.chart.createTechnicalIndicator("MACD");
         //this.chart.createTechnicalIndicator("EMA");
 
         //主图混
@@ -134,9 +134,26 @@ export class ChartView {
             let valuecount = desc.values.length;
             let plots: TechnicalIndicatorPlot[] = [];
             let valuenames: string[] = [];
+            let skipcount = 0;
             for (let i = 0; i < valuecount; i++) {
                 valuenames.push(desc.values[i]);
-                plots.push({ key: valuenames[i], title: desc.values[i], type: "line" });
+
+                if (desc.values[i].indexOf("*") == 0) {
+                    skipcount++;
+                    continue;
+                }
+                if (valuenames[i] == "MACD") {
+                    plots.push({
+                        key: valuenames[i], title: valuenames[i] + ":", type: "bar", baseValue: 0,
+                        "color": (_data, _option) => {
+                            //console.warn(_data.current?.technicalIndicatorData["MACD"]>0);
+                            return _data.current?.technicalIndicatorData["MACD"]>0?"red":"green";
+                        }
+                    });
+                }
+                else {
+                    plots.push({ key: valuenames[i], title: valuenames[i] + ":", type: "line" });
+                }
             }
             let clousethis = this;
             let closuefunc = function (kLineDataList: KLineData[], options?: any): any[] {
@@ -163,7 +180,7 @@ export class ChartView {
                 {
                     "name": indname,
                     "calcParams": [{ allowDecimal: true, value: 5.5 }],
-                    "precision": valuecount,
+                    "precision": valuecount - skipcount,
                     "plots": plots,
 
                     calcTechnicalIndicator: closuefunc
