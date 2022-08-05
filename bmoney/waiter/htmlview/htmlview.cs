@@ -189,6 +189,19 @@ namespace BMoney
             {
                 var obj = new Newtonsoft.Json.Linq.JObject();
                 obj["name"] = d.indicator.Name;
+                var title = "";// d.indicator.Name;
+                var vs = d.indicator.GetParamValue();
+                if (vs.Length > 0)
+                {
+                    //title += "(";
+                    for (var i = 0; i < vs.Length; i++)
+                    {
+                        if (i != 0) title += ",";
+                        title += vs[i].ToString();
+                    }
+                    //title += ")";
+                }
+                obj["title"] = title;
                 obj["desc"] = d.indicator.Description;
                 var initarray = new Newtonsoft.Json.Linq.JArray();
                 foreach (var def in d.indicator.GetInitParamDefine())

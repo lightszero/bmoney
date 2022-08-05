@@ -1,4 +1,4 @@
-import klinecharts, { KLineData, TechnicalIndicatorPlot } from "klinecharts";
+import klinecharts, { KLineData, TechnicalIndicatorPlot, TechnicalIndicatorPlotType } from "klinecharts";
 
 export type IndicatorMap = { [id: string]: object };
 export class PickPoint {
@@ -11,6 +11,7 @@ export class PickPoint {
 
 export class input_IndicatorDesc {
     name?: string;
+    title?:string;
     desc?: string;
     initparam?: string[];
     values?: string[]
@@ -142,14 +143,27 @@ export class ChartView {
                     skipcount++;
                     continue;
                 }
-                if (valuenames[i] == "MACD") {
-                    plots.push({
-                        key: valuenames[i], title: valuenames[i] + ":", type: "bar", baseValue: 0,
-                        "color": (_data, _option) => {
-                            //console.warn(_data.current?.technicalIndicatorData["MACD"]>0);
-                            return _data.current?.technicalIndicatorData["MACD"]>0?"red":"green";
-                        }
-                    });
+                if(valuenames[i].indexOf("$")>0)
+                {
+                    let info  =valuenames[i].split('$');
+                    var _st =info[1] as TechnicalIndicatorPlotType;
+                    if(info.length>=2)
+                    {
+                        var _bv =parseFloat(info[2]);
+                        plots.push({
+                            key: valuenames[i], title: info[0] + ":", type:_st, baseValue: _bv
+                             ,
+                             "color": (_data, _option) => {
+                                 //console.warn(_data.current?.technicalIndicatorData[valuenames[i]]>0);
+                                 return _data.current?.technicalIndicatorData[valuenames[i]]>_bv?"red":"green";
+                             }
+                        });
+                    }
+                    else
+                    {
+                        plots.push({ key: valuenames[i], title: info[0] + ":", type: _st });
+                    }
+                  
                 }
                 else {
                     plots.push({ key: valuenames[i], title: valuenames[i] + ":", type: "line" });
@@ -179,7 +193,7 @@ export class ChartView {
             this.chart.addTechnicalIndicatorTemplate(
                 {
                     "name": indname,
-                    "calcParams": [{ allowDecimal: true, value: 5.5 }],
+                    "calcParams": [{ allowDecimal: true, value: [desc.title]}],
                     "precision": valuecount - skipcount,
                     "plots": plots,
 

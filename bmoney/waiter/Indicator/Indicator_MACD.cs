@@ -24,7 +24,7 @@ namespace BMoney.Indicator
         }
         public string[] GetValuesDefine()
         {
-            return new string[] { $"*EMA({N1})", $"*EMA({N2})","DIF","DEA","MACD" };
+            return new string[] { $"*EMA({N1})", $"*EMA({N2})","DIF","DEA","MACD$bar$0" };
         }
 
 
