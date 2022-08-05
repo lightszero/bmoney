@@ -1,4 +1,4 @@
-import klinecharts, { TechnicalIndicatorPlot } from "klinecharts";
+import klinecharts, { KLineData, TechnicalIndicatorPlot } from "klinecharts";
 
 export type IndicatorMap = { [id: string]: object };
 export class PickPoint {
@@ -122,40 +122,48 @@ export class ChartView {
         console.warn("==RegADataDesc==");
         this.adatadesc = descs;
 
-        for (var key in this.adatadesc) {
-            var desc = this.adatadesc[key];
-            var indname = "CC_" + desc.name;
+        for (let key in this.adatadesc) {
+            let desc = this.adatadesc[key];
+            let iname = desc.name;
+            let indname = "CC_" + desc.name;
             // 添加一个指标模板
             if (desc.values == null) throw "";
-            var valuecount = desc.values.length;
-            var plots: TechnicalIndicatorPlot[] = [];
-            var valuenames: string[] = [];
-            for (var i = 0; i < valuecount; i++) {
+            let valuecount = desc.values.length;
+            let plots: TechnicalIndicatorPlot[] = [];
+            let valuenames: string[] = [];
+            for (let i = 0; i < valuecount; i++) {
                 valuenames.push(desc.values[i]);
                 plots.push({ key: valuenames[i], title: desc.values[i], type: "line" });
             }
+            let clousethis = this;
+            let closuefunc = function (kLineDataList: KLineData[], options?: any): any[] {
+                var array: any[] = [];
+                for (var i = 0; i < kLineDataList.length; i++) {
+                    var obj: { [id: string]: Number } = {};
 
-            this.chart.addTechnicalIndicatorTemplate(
-                {
-                "name": indname,
-                "calcParams": [{ allowDecimal: true, value: 5.5 }],
-                "precision": valuecount,
-                "plots": plots,
+                    if (clousethis.adata != null && iname != null) {
+                        let values = clousethis.adata[i][iname];
 
-                calcTechnicalIndicator: async function (kLineDataList, { params, plots }): Promise<any[]> {
-                    var array: any[] = [];
-                    for (var i = 0; i < kLineDataList.length; i++) {
-                        var obj: { [id: string]: Number } = {};
+
                         for (var j = 0; j < valuecount; j++) {
                             {
-                                obj[valuenames[j]] = i+j;
+                                obj[valuenames[j]] = values[j];
                             }
-                          
+
                         }
-                        array.push(obj);
                     }
-                    return array;
+                    array.push(obj);
                 }
+                return array;
+            }
+            this.chart.addTechnicalIndicatorTemplate(
+                {
+                    "name": indname,
+                    "calcParams": [{ allowDecimal: true, value: 5.5 }],
+                    "precision": valuecount,
+                    "plots": plots,
+
+                    calcTechnicalIndicator: closuefunc
                 }
             );
             console.warn("addTechnicalIndicatorTemplate:" + indname);

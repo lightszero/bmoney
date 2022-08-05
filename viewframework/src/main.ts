@@ -57,10 +57,10 @@ window.onload = () =>
 
     let dataList = input_klineDatas;//generateTestData();
 
-    view.AddKData(input_klineDatas);
+  
     view.RegADataDesc(input_IndicatorDescs);
     view.AddAData(input_IndicatorDatas);
-
+    view.AddKData(input_klineDatas);
     let p = dataList[dataList.length - 1];
 
     // {
