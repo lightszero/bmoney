@@ -20,10 +20,9 @@ namespace BMoney
 
 
 
-            //TestCandlePool_Random();
-            TestCandlePool_CSV();
-
-            Test_Binance();
+            //TestCandlePool_Random();//随机填充数据
+            TestCandlePool_CSV();//从CSV加载数据
+            //Test_Binance();//币安历史数据
 
 
             //Console.WriteLine("按任意键退出！！！");
