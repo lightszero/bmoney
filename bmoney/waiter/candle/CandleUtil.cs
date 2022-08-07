@@ -20,6 +20,12 @@ namespace BMoney
             from += TimeSpan.FromMilliseconds(v);
             return from.ToLocalTime();
         }
+        public static double ToMinute(DateTime time)
+        {
+            var tick1 = time.ToUniversalTime();
+            var from = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            return (tick1 - from).TotalMinutes;
+        }
         public static void PushRandomData(CandlePool pool, DateTime begintime, TimeSpan tick, int count)
         {
             Random ran = new Random();
