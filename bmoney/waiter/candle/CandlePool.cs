@@ -104,7 +104,7 @@ namespace BMoney
             }
             for (var i = 0; i < regdIndicator.Count; i++)
             {
-                double[] v = regdIndicator[i].GetValues(this, i, index);
+                double[] v = regdIndicator[i].CalcValues(this, i, index);
                 valueIndicator[index][i] = v;
             }
         }

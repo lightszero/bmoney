@@ -48,7 +48,7 @@ namespace BMoney.Indicator
         }
 
 
-        public double[] GetValues(CandlePool input, int indicatorIndex, int candleIndex)
+        public double[] CalcValues(CandlePool input, int indicatorIndex, int candleIndex)
         {
             return IndicatorUtil.CalcKDJ(input, indicatorIndex, candleIndex, N, M1, M2);
         }

@@ -15,7 +15,7 @@ namespace BMoney.Indicator
         public string[] GetInitParamDefine();
         public string[] GetParamValue();
         public string[] GetValuesDefine();
-        public double[] GetValues(CandlePool input, int indicatorIndex, int candleIndex);
+        public double[] CalcValues(CandlePool input, int indicatorIndex, int candleIndex);
 
     }
 }
