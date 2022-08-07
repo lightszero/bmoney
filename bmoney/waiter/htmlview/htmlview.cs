@@ -159,7 +159,7 @@ namespace BMoney
         static Newtonsoft.Json.Linq.JObject CandleToJson(CandleWithIndicator candle)
         {
             var candlejson = new Newtonsoft.Json.Linq.JObject();
-            candlejson["timestamp"] = ToJSTime(candle.candle.time);
+            candlejson["timestamp"] = CandleUtil.ToJSTime(candle.candle.time);
 
             candlejson["open"] = candle.candle.open;
             candlejson["high"] = candle.candle.high;
@@ -222,11 +222,6 @@ namespace BMoney
 
             return json;
         }
-        static double ToJSTime(DateTime time)
-        {
-            var tick1 = time.ToUniversalTime();
-            var from = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-            return (tick1 - from).TotalMilliseconds;
-        }
+      
     }
 }
