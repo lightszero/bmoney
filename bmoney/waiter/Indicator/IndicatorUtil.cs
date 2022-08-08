@@ -100,5 +100,10 @@ namespace BMoney.Indicator
             return Y;
 
         }
+        public static double GetFromIndex(CandlePool input, IndicatorValueIndex index, int candleIndex)
+        {
+            var candle = input.GetCandleWithIndicator(candleIndex);
+            return candle.values[index.IndicatorIndex].value[index.ValueIndex];
+        }
     }
 }

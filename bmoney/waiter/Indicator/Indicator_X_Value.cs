@@ -9,9 +9,9 @@ namespace BMoney.Indicator
 
     //自定义指标都用X开头
     //这里主要是为了验证依赖其他指标
-    public class Indicator_XValue : IIndicator
+    public class Indicator_X_Value : IIndicator
     {
-        public string Name => "XValue";
+        public string Name => "X_Value";
 
         public string Description => "自定义指标XValue";
 
@@ -67,6 +67,16 @@ namespace BMoney.Indicator
         }
         public double[] CalcValues(CandlePool input, int indicatorIndex, int candleIndex)
         {
+        
+            if(candleIndex>0)
+            {
+                var xm1 = IndicatorUtil.GetFromIndex(input, depend_macd, candleIndex-1);
+                var x= IndicatorUtil.GetFromIndex(input, depend_macd, candleIndex);
+                if (x > 0 && xm1 < 0)
+                    return new double[] { 1, 0 };
+                else if (x < 0 && xm1 > 0)
+                    return new double[] { -1, 0 };
+            }
             return new double[] { 0, 0 };
         }
 
