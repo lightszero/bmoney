@@ -72,10 +72,17 @@ namespace BMoney.Indicator
             {
                 var xm1 = IndicatorUtil.GetFromIndex(input, depend_macd, candleIndex-1);
                 var x= IndicatorUtil.GetFromIndex(input, depend_macd, candleIndex);
-                if (x > 0 && xm1 < 0)
+                var difnow = IndicatorUtil.GetFromIndex(input, depend_dif, candleIndex);
+                if (x > 0 && xm1 < 0 && difnow < -0.5)
+                {
+                    //走强
                     return new double[] { 1, 0 };
-                else if (x < 0 && xm1 > 0)
+                }
+                else if (x < 0 && xm1 > 0 && difnow > 0.5)
+                {
+                    //走弱
                     return new double[] { -1, 0 };
+                }
             }
             return new double[] { 0, 0 };
         }
