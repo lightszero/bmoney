@@ -12,12 +12,12 @@ namespace BMoney.Indicator
         {
             double low = double.MaxValue;
             double high = double.MinValue;
-            for (var i = Index - N; i <= Index; i++)
+            for (var i = Index + 1 - N; i <= Index; i++)
             {
                 if (i < 0)
                 {
-                    low = 0;
-                    high = 0;
+                    //low = 0;
+                    //high = 0;
                 }
                 else
                 {
@@ -50,13 +50,14 @@ namespace BMoney.Indicator
             RSV = (candle.close - min) / (max - min) * 100;
             k = km1 * (M1 - 1) / M1 + RSV / M1;
             d = dm1 * (M2 - 1) / M2 + k / M2;
-            j = 3.0 * k - 2.0 * d;
+           
             if (k < 0) k = 0;
             if (k > 100) k = 100;
             if (d < 0) d = 0;
             if (d > 100) d = 100;
-            if (j < 0) j = 0;
-            if (j > 100) j = 100;
+            j = 3.0 * k - 2.0 * d;
+            //if (j < 0) j = 0;
+            //if (j > 100) j = 100;
             return new double[] { k, d, j };
         }
         public static double CalcEMA(CandlePool input, int techIndex, int candleIndex, int emaindex, int N)
@@ -69,6 +70,10 @@ namespace BMoney.Indicator
             {
                 var candlem1 = input.GetCandleWithIndicator(candleIndex - 1);
                 YM1 = candlem1.values[techIndex].value[emaindex];
+            }
+            else
+            {
+                return X;
             }
             var Y = (2 * X + (N - 1) * YM1) / (N + 1);
             //Y =[2 * X + (N - 1) * Y']/(N+1)
@@ -86,6 +91,10 @@ namespace BMoney.Indicator
                 var candlem1 = input.GetCandleWithIndicator(candleIndex - 1);
                 YM1 = candlem1.values[techIndex].value[emaindex];
             }
+            else
+            {
+                return X;
+            }    
             var Y = (2 * X + (N - 1) * YM1) / (N + 1);
             //Y =[2 * X + (N - 1) * Y']/(N+1)
             return Y;

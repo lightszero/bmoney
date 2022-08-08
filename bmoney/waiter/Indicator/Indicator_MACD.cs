@@ -50,6 +50,7 @@ namespace BMoney.Indicator
 
         public double[] CalcValues(CandlePool input, int indicatorIndex, int candleIndex)
         {
+           
             double ema1 = IndicatorUtil.CalcEMA(input, indicatorIndex, candleIndex, 0, N1);
             double ema2 = IndicatorUtil.CalcEMA(input, indicatorIndex, candleIndex, 1, N2);
             double dif = ema1 - ema2;
