@@ -46,7 +46,10 @@ namespace BMoney.Indicator
                 N3 = int.Parse(Param[2]);
             }
         }
+        public void OnReg(CandlePool input)
+        {
 
+        }
 
         public double[] CalcValues(CandlePool input, int indicatorIndex, int candleIndex)
         {

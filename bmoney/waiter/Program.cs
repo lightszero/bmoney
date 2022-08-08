@@ -72,6 +72,7 @@ namespace BMoney
             //pool.RegIndicator(Indicator.IndicatorFactory.Create("EMA", null));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("MACD", null));
 
+            pool.RegIndicator(Indicator.IndicatorFactory.Create("xvalue", null));
             //使用import推数据进去
             import.Start(pool);
 

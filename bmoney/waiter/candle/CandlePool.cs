@@ -61,9 +61,15 @@ namespace BMoney
         public void RegIndicator(Indicator.IIndicator ind)
         {
             if (ind == null) throw new Exception("error IIndicator");
+            foreach(var i in regdIndicator)
+            {
+                if(i.Name==ind.Name)
+                    throw new Exception("already have this IIndicator:" + ind.Name); 
+            }
             if (regdIndicator.Contains(ind)) throw new Exception("already have this IIndicator:" + ind.Name);
             if (IsBegin())
                 throw new Exception("RegIndicator need before Push any Data.");
+            ind.OnReg(this);
             regdIndicator.Add(ind);
         }
         public void Push(Candle candle, bool final)
@@ -125,7 +131,48 @@ namespace BMoney
             var v = new CandleWithIndicator() { candle = candles[index], values = vinfos };
             return v;
         }
+        public IndicatorValueIndex GetIndicatorIndex(string IndicatorName, string ValueName = null)
+        {
+            IndicatorValueIndex index = new IndicatorValueIndex();
+            index.IndicatorName = IndicatorName;
+            index.ValueName = ValueName;
+            index.IndicatorIndex = -1;
+            for (var i = 0; i < regdIndicator.Count; i++)
+            {
+                if (regdIndicator[i].Name.ToLower() == IndicatorName.ToLower())
+                {
+                    index.Indicator = regdIndicator[i];
+                    index.IndicatorIndex = i;
+                    break;
+                }
+            }
+            if (index.IndicatorIndex < 0)
+                throw new Exception("not found IndicatorName:" + IndicatorName);
 
+            index.ValueIndex = -1;
+            if (ValueName != null)
+            {
+                var vs = index.Indicator.GetValuesDefine();
+                for (var i = 0; i < vs.Length; i++)
+                {
+                    var idoller = vs[i].IndexOf('$');
+                    var name = vs[i].ToLower();
+                    if (idoller > 0)
+                        name = name.Substring(0, idoller);
+                    if(name==ValueName)
+                    {
+                        index.ValueIndex = i;
+                        break;
+                    }
+                    
+                }
+                if (index.ValueIndex < 0)
+                    throw new Exception("not found ValueName.");
+            }
+
+            return index;
+
+        }
         public int GetLastestCandleID(out bool final)
         {
             final = LastestInfo.Final;

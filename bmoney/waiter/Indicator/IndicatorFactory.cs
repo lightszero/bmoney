@@ -27,7 +27,7 @@ namespace BMoney.Indicator
                     //创建一个临时实例只是为了取得Name 和 InitParamDefine
                     var inst = System.Activator.CreateInstance(t) as IIndicator;
 
-                    indtypes[inst.Name] = new InstInfo
+                    indtypes[inst.Name.ToLower()] = new InstInfo
                     {
                         type = t,
                         InitParamDefine = inst.GetInitParamDefine()
@@ -42,9 +42,9 @@ namespace BMoney.Indicator
         }
         public static IIndicator Create(string name, string[] _params)
         {
-            if (indtypes.ContainsKey(name) == false)
+            if (indtypes.ContainsKey(name.ToLower()) == false)
                 return null;
-            var inst = System.Activator.CreateInstance(indtypes[name].type) as IIndicator;
+            var inst = System.Activator.CreateInstance(indtypes[name.ToLower()].type) as IIndicator;
             inst.Init(_params);
             return inst;
         }

@@ -12,6 +12,7 @@ namespace BMoney.Indicator
         public string Name { get;  }
         public string Description { get; }
         public void Init(string[] Param);
+        public void OnReg(CandlePool input);
         public string[] GetInitParamDefine();
         public string[] GetParamValue();
         public string[] GetValuesDefine();
