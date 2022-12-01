@@ -69,8 +69,9 @@ namespace BMoney
             if (regdIndicator.Contains(ind)) throw new Exception("already have this IIndicator:" + ind.Name);
             if (IsBegin())
                 throw new Exception("RegIndicator need before Push any Data.");
-            ind.OnReg(this);
             regdIndicator.Add(ind);
+            ind.OnReg(this);
+
         }
         public void Push(Candle candle, bool final)
         {
@@ -133,6 +134,7 @@ namespace BMoney
         }
         public IndicatorValueIndex GetIndicatorIndex(string IndicatorName, string ValueName = null)
         {
+            ValueName = ValueName.ToLower();
             IndicatorValueIndex index = new IndicatorValueIndex();
             index.IndicatorName = IndicatorName;
             index.ValueName = ValueName;

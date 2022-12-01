@@ -13,7 +13,7 @@ namespace BMoney.Indicator
     {
         public string Name => "X_Value";
 
-        public string Description => "自定义指标XValue";
+        public string Description => "自定义指标XValue 强弱标志";
 
         public string[] GetInitParamDefine()
         {

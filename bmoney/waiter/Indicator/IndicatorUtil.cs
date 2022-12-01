@@ -8,10 +8,12 @@ namespace BMoney.Indicator
 {
     internal class IndicatorUtil
     {
-        public static void GetMinMaxPrice(CandlePool pool, int Index, int N, out double Min, out double Max)
+        public static void GetMinMaxPrice(CandlePool pool, int Index, int N, out double Min, out double Max, out double open, out double close)
         {
             double low = double.MaxValue;
             double high = double.MinValue;
+            open = double.NaN;
+            close = 0;
             for (var i = Index + 1 - N; i <= Index; i++)
             {
                 if (i < 0)
@@ -24,14 +26,23 @@ namespace BMoney.Indicator
                     var c = pool.GetCandle(i);
                     if (c.low < low) low = c.low;
                     if (c.high > high) high = c.high;
+                    if(double.IsNaN(open))
+                    {
+                        open = c.open;
+                    }
+                    if (i == Index)
+                    {
+                        close = c.close;
+                    }
                 }
+
             }
             Min = low;
             Max = high;
         }
         public static double[] CalcKDJ(CandlePool input, int kdjIndex, int candleIndex, int N = 9, int M1 = 3, int M2 = 3)
         {
-            IndicatorUtil.GetMinMaxPrice(input, candleIndex, N, out double min, out double max);
+            IndicatorUtil.GetMinMaxPrice(input, candleIndex, N, out double min, out double max,out _,out _);
             var candle = input.GetCandle(candleIndex);
             double RSV = 0;
             double k = 50;
@@ -50,7 +61,7 @@ namespace BMoney.Indicator
             RSV = (candle.close - min) / (max - min) * 100;
             k = km1 * (M1 - 1) / M1 + RSV / M1;
             d = dm1 * (M2 - 1) / M2 + k / M2;
-           
+
             if (k < 0) k = 0;
             if (k > 100) k = 100;
             if (d < 0) d = 0;
@@ -94,7 +105,7 @@ namespace BMoney.Indicator
             else
             {
                 return X;
-            }    
+            }
             var Y = (2 * X + (N - 1) * YM1) / (N + 1);
             //Y =[2 * X + (N - 1) * Y']/(N+1)
             return Y;

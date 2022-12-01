@@ -37,15 +37,15 @@ namespace BMoney
             CandlePool pool = new CandlePool("tpool", import.Tick);
             //注册一个新的指标，必须在push data之前
             pool.RegIndicator(Indicator.IndicatorFactory.Create("KDJ", new string[] { "9", "3", "3" }));
-            //pool.RegIndicator(Indicator.IndicatorFactory.Create("EMA", null));
+            pool.RegIndicator(Indicator.IndicatorFactory.Create("EMA", null));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("MACD", null));
 
             import.Start(pool);
 
-            if(import.IsAsync)
+            if (import.IsAsync)
             {
 
-                while(import.IsActive)
+                while (import.IsActive)
                 {
                     System.Threading.Thread.Sleep(1000);
                     Console.WriteLine("Wait async Importer.");
@@ -69,9 +69,9 @@ namespace BMoney
             CandlePool pool = new CandlePool("tpool", import.Tick);
             //注册一个新的指标，必须在push data之前
             pool.RegIndicator(Indicator.IndicatorFactory.Create("KDJ", new string[] { "9", "3", "3" }));
-            //pool.RegIndicator(Indicator.IndicatorFactory.Create("EMA", null));
+            //pool.RegIndicator(Indicator.IndicatorFactory.Create("EMA", new string[] { "10", "30", "60" }));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("MACD", null));
-
+            pool.RegIndicator(Indicator.IndicatorFactory.Create("x_vector", null));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("x_value", null));
             //使用import推数据进去
             import.Start(pool);
@@ -85,7 +85,7 @@ namespace BMoney
         {
             CandlePool pool = new CandlePool("tpool", TimeSpan.FromMinutes(5));
             //注册一个新的指标，必须在push data之前
-            pool.RegIndicator(Indicator.IndicatorFactory.Create("KDJ",new string[]{ "9","3","3"}));
+            pool.RegIndicator(Indicator.IndicatorFactory.Create("KDJ", new string[] { "9", "3", "3" }));
             //pool.RegIndicator(Indicator.IndicatorFactory.Create("EMA", null));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("MACD", null));
             //随便喂点数据进去，每喂一个数据，都会计算所有注册的指标
