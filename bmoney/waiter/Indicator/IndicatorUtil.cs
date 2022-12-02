@@ -71,6 +71,22 @@ namespace BMoney.Indicator
             //if (j > 100) j = 100;
             return new double[] { k, d, j };
         }
+        public static double CalcMA(CandlePool input,int candleIndex,int N)
+        {
+            double total=0;
+            int useN = 0 ;
+            for(var i=0;i<N;i++)
+            {
+                if(candleIndex-i<0)
+                {
+                    break;
+                }
+                var candle = input.GetCandle(candleIndex-i);
+                useN++;
+                total += candle.close;
+            }
+            return total / useN;
+        }
         public static double CalcEMA(CandlePool input, int techIndex, int candleIndex, int emaindex, int N)
         {
             var candle = input.GetCandle(candleIndex);
@@ -116,5 +132,6 @@ namespace BMoney.Indicator
             var candle = input.GetCandleWithIndicator(candleIndex);
             return candle.values[index.IndicatorIndex].value[index.ValueIndex];
         }
+
     }
 }

@@ -71,6 +71,7 @@ namespace BMoney
             pool.RegIndicator(Indicator.IndicatorFactory.Create("KDJ", new string[] { "9", "3", "3" }));
             //pool.RegIndicator(Indicator.IndicatorFactory.Create("EMA", new string[] { "10", "30", "60" }));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("MACD", null));
+            pool.RegIndicator(Indicator.IndicatorFactory.Create("BOLL", null));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("x_vector", null));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("x_value", null));
             //使用import推数据进去

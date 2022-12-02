@@ -27,14 +27,14 @@ namespace BMoney.Indicator
         }
         public string[] GetParamValue()
         {
-            return new string[] { N1.ToString() };
+            return new string[] { N1.ToString(),N2.ToString() };
         }
         public void Init(string[] Param)
         {
             if (Param == null || Param.Length == 0)
             {
-                N1 = 20;
-                N2 = 60;
+                N1 = 1;
+                N2 = 20;
             }
             else
             {
@@ -45,10 +45,12 @@ namespace BMoney.Indicator
         //如果依赖其他指标，在这里找出来
         IndicatorValueIndex depend_selfN1;
         IndicatorValueIndex depend_selfN2;
+        IndicatorValueIndex depend_selfXX;
         public void OnReg(CandlePool pool)
         {
             depend_selfN1 = pool.GetIndicatorIndex("X_Vector", $"XVec({N1})");
             depend_selfN2 = pool.GetIndicatorIndex("X_Vector", $"XVec({N2})");
+            depend_selfXX = pool.GetIndicatorIndex("X_Vector", $"XX");
         }
 
         //显示的指标
@@ -60,56 +62,18 @@ namespace BMoney.Indicator
 
         public double[] CalcValues(CandlePool input, int indicatorIndex, int candleIndex)
         {
-            IndicatorUtil.GetMinMaxPrice(input, candleIndex, N1, out double min1, out double max1, out double open1, out double close1);
-            IndicatorUtil.GetMinMaxPrice(input, candleIndex, N2, out double min2, out double max2, out double open2, out double close2);
-            double v1 = close1 - open1; //涨跌趋势
-            v1 = v1 / (v1 < 0 ? open1 : close1) * 1000.0;
-            double v2 = close2 - open2; //涨跌趋势
-            v2 = v2 / (v2 < 0 ? open2 : close2) * 1000.0;
+            double v1= IndicatorUtil.CalcMA(input, candleIndex, N1);
+            double v2= IndicatorUtil.CalcMA(input, candleIndex, N2);
 
-
-            double v1c = 0;//强弱趋势
-
-
-            if (-3 < v1 && v1 < 3)
+            //修改10天前的数据
+            if (candleIndex - 10 >= 0)
             {
-                v1 = 0;
+                input.Unsafe_SetHistoryValue(candleIndex - 10, depend_selfXX, v1);
             }
-            if (-3 < v2 && v2 < 3)
-            {
-                v2 = 0;
-            }
-            int sign1 = Math.Sign(v1);
-            int sign2 = Math.Sign(v2);
-            if (sign1 == sign2 && sign1 != 0)
-            {
-
-
-                for (int i = 1; i <= N1; i++)
-                {
-                    var lastindex = candleIndex - i;
-                    if (lastindex < 0)
-                        break;
-                    var lastv1 = IndicatorUtil.GetFromIndex(input, depend_selfN1, lastindex);//不能取当前candle 还没入
-                    var lastv2 = IndicatorUtil.GetFromIndex(input, depend_selfN2, lastindex);//不能取当前candle 还没入
-                    int slast1 = Math.Sign(lastv1);
-                    int slast2 = Math.Sign(lastv2);
-                    if (
-                        slast1 == slast2 && slast1 == sign1)
-
-                    {
-                        v1c++;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                //把1空出来
-                if (v1c != 0)
-                    v1c = 2 + v1c * sign1;
-                
-            }
+            
+            //最新的数据没有意义
+            double v1c = v1;
+     
             return new double[] { v1, v2, v1c };
         }
 

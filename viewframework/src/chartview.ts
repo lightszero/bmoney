@@ -122,6 +122,7 @@ export class ChartView {
     public AddAData(data: input_IndicatorDatas): void {
         this.adata = data;
     }
+    mapIDs:{[id:string]:string}={};
     RegADataDesc(descs: input_IndicatorDescs): void {
         console.warn("==RegADataDesc==");
         this.adatadesc = descs;
@@ -202,7 +203,35 @@ export class ChartView {
             );
             console.warn("addTechnicalIndicatorTemplate:" + indname);
 
-            this.chart.createTechnicalIndicator(indname);
+            this.mapIDs[indname]=this.chart.createTechnicalIndicator(indname);
+            {
+            var viewlist =document.getElementById("viewlist") as HTMLDivElement;
+            var span =document.createElement("span");
+            var span2 =document.createElement("span");
+            let cb =document.createElement("input");
+            var br =document.createElement("br");
+            span.innerText="View:";
+            span2.innerText =desc.title+":"+desc.desc;
+            cb.type="checkbox";
+            cb.checked=true;
+            cb.onchange=(e)=>
+            {
+                if(cb.checked)
+                { console.log("checked.");
+                     this.mapIDs[indname]=this.chart.createTechnicalIndicator(indname);
+                }
+                else
+                {
+                    this.chart.removeTechnicalIndicator(this.mapIDs[indname]);
+                    console.log("unchecked.");
+                }
+            }
+            viewlist.appendChild(span);
+            viewlist.appendChild(cb);
+            viewlist.appendChild(span2);
+            viewlist.appendChild(br);
+            
+            }
         }
     }
 }

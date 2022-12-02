@@ -61,10 +61,10 @@ namespace BMoney
         public void RegIndicator(Indicator.IIndicator ind)
         {
             if (ind == null) throw new Exception("error IIndicator");
-            foreach(var i in regdIndicator)
+            foreach (var i in regdIndicator)
             {
-                if(i.Name==ind.Name)
-                    throw new Exception("already have this IIndicator:" + ind.Name); 
+                if (i.Name == ind.Name)
+                    throw new Exception("already have this IIndicator:" + ind.Name);
             }
             if (regdIndicator.Contains(ind)) throw new Exception("already have this IIndicator:" + ind.Name);
             if (IsBegin())
@@ -132,6 +132,20 @@ namespace BMoney
             var v = new CandleWithIndicator() { candle = candles[index], values = vinfos };
             return v;
         }
+        /// <summary>
+        /// 危险操作，慎用
+        /// </summary>
+        /// <param name="candleindex"></param>
+        /// <param name="index"></param>
+        /// <param name="value"></param>
+        public void Unsafe_SetHistoryValue(int candleindex, IndicatorValueIndex index, double value)
+        {
+            valueIndicator[candleindex][index.IndicatorIndex][index.ValueIndex] = value;
+        }
+        public double Unsafe_GetHistoryValue(int candleindex, IndicatorValueIndex index)
+        {
+            return valueIndicator[candleindex][index.IndicatorIndex][index.ValueIndex];
+        }
         public IndicatorValueIndex GetIndicatorIndex(string IndicatorName, string ValueName = null)
         {
             ValueName = ValueName.ToLower();
@@ -161,12 +175,12 @@ namespace BMoney
                     var name = vs[i].ToLower();
                     if (idoller > 0)
                         name = name.Substring(0, idoller);
-                    if(name==ValueName)
+                    if (name == ValueName)
                     {
                         index.ValueIndex = i;
                         break;
                     }
-                    
+
                 }
                 if (index.ValueIndex < 0)
                     throw new Exception("not found ValueName.");
