@@ -233,5 +233,33 @@ namespace BMoney
             //    c.Dump();
             //}
         }
+        public void GenDatasForML(string filename, IndicatorValueIndex value, int N)
+        {
+            int id = GetLastestCandleID(out bool f1);
+            StringBuilder total = new StringBuilder();
+            StringBuilder line = new StringBuilder();
+            for(var i=0;i<N;i++)
+            {
+                line.Append("k" + i.ToString("D4") + ",");
+            }
+            line.Append("will");
+            total.Append(line.ToString());
+            total.AppendLine();
+            for (var i =N;i<id-N;i++)
+            {
+                line.Clear();
+
+                for (var j = 1;j<=N;j++) //1~60
+                {
+                    var c = this.GetCandle(i - N + j);
+                    line.Append(c.close + ",");
+                }
+                line.Append(Unsafe_GetHistoryValue(i, value));
+
+                total.Append(line.ToString());
+                total.AppendLine();
+            }
+            System.IO.File.WriteAllText(filename,total.ToString());
+        }
     }
 }

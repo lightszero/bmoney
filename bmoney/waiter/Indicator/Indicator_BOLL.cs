@@ -48,7 +48,6 @@ namespace BMoney.Indicator
         public double[] CalcValues(CandlePool input, int indicatorIndex, int candleIndex)
         {
             double ma = IndicatorUtil.CalcMA(input, candleIndex, N1);//中轨线
-
             double close = input.GetCandle(candleIndex).close;
             double cha0 = close  - ma;
             double total = cha0*cha0;  //(C-MA)的平方  累积N日
@@ -71,7 +70,7 @@ namespace BMoney.Indicator
             double md = Math.Sqrt(total / useN);
             double up = ma+md*2;
             double dn = ma-md*2;
-            return new double[] { ma,up,dn,close};
+            return new double[] { ma,up,dn, close };
         }
 
     }

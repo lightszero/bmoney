@@ -78,7 +78,7 @@ namespace BMoney
             import.Start(pool);
 
             pool.Dump();
-
+            pool.GenDatasForML("ml.csv",pool.GetIndicatorIndex("X_Vector", "XX"), 60);
             HtmlView.Show(pool);
 
         }
