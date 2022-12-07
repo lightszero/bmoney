@@ -8,11 +8,11 @@ namespace BMoney.Indicator
 {
 
 
-    public class Indicator_BOLL : IIndicator
+    public class Indicator_CCI : IIndicator
     {
-        public string Name => "BOLL";
+        public string Name => "CCI";
 
-        public string Description => "BOLL指标";
+        public string Description => "CCI指标";
 
         public string[] GetInitParamDefine()
         {
@@ -24,7 +24,7 @@ namespace BMoney.Indicator
         }
         public string[] GetValuesDefine()
         {
-            return new string[] { "MB","UP","DN","CLOSE" };
+            return new string[] { "CCI","TU","TD" };
         }
 
         int N1;
@@ -45,32 +45,21 @@ namespace BMoney.Indicator
             depend_selfMB = pool.GetIndicatorIndex("BOLL", "MB");
         }
 
+        double typ(Candle candle)
+        {
+            return (candle.open + candle.close + candle.low) / 3;
+        }
+
         public double[] CalcValues(CandlePool input, int indicatorIndex, int candleIndex)
         {
-            double ma = IndicatorUtil.CalcMA(input, candleIndex, N1);//中轨线
-            double close = input.GetCandle(candleIndex).close;
-            double cha0 = close  - ma;
-            double total = cha0*cha0;  //(C-MA)的平方  累积N日
-            int useN = 1;
-            for(var i=1;i<N1;i++)
-            {
-                if (candleIndex - i >= 0)
-                {
-                    useN++;
-                    double malast = input.Unsafe_GetHistoryValue(candleIndex - i, depend_selfMB);
-                    double cha = input.GetCandle(candleIndex - i).close - malast;
-                    total += cha * cha;
-                }
-                else
-                {
-                    break;
-                }
-            }
-           
-            double md = Math.Sqrt(total / useN);
-            double up = ma+md*2;
-            double dn = ma-md*2;
-            return new double[] { ma,up,dn, close };
+            var candlenow = input.GetCandle(candleIndex);
+            var typ_now = typ(candlenow);
+            // CCI: (TYP - MA(TYP, N)) / (0.015 * AVEDEV(TYP, N));
+            var cci = (typ_now - IndicatorUtil.CalcMAFunc(input, candleIndex, N1, typ))
+                / (0.015 * IndicatorUtil.CalcAVEDEVFunc(input, candleIndex, N1, typ)
+                );
+
+            return new double[] { cci, 100,-100};
         }
 
     }

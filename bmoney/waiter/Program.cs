@@ -21,8 +21,8 @@ namespace BMoney
 
 
             //TestCandlePool_Random();//随机填充数据
-            TestCandlePool_CSV();//从CSV加载数据
-            //Test_Binance();//币安历史数据
+            //TestCandlePool_CSV();//从CSV加载数据
+            Test_Binance();//币安历史数据
 
 
             //Console.WriteLine("按任意键退出！！！");
@@ -31,7 +31,7 @@ namespace BMoney
 
         static void Test_Binance()
         {
-            var start = DateTime.Now - TimeSpan.FromHours(100);
+            var start = DateTime.Now - TimeSpan.FromHours(10);
             var startonM = new DateTime(start.Year, start.Month, start.Day, start.Hour, start.Minute, 0);
             var import = new data.BinanceImporter(false, startonM, TimeSpan.FromMinutes(1.0));
             CandlePool pool = new CandlePool("tpool", import.Tick);
@@ -39,6 +39,9 @@ namespace BMoney
             pool.RegIndicator(Indicator.IndicatorFactory.Create("KDJ", new string[] { "9", "3", "3" }));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("EMA", null));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("MACD", null));
+            pool.RegIndicator(Indicator.IndicatorFactory.Create("BOLL", null));
+            pool.RegIndicator(Indicator.IndicatorFactory.Create("CCI", null));
+
 
             import.Start(pool);
 

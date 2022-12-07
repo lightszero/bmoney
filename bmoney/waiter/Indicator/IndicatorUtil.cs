@@ -26,7 +26,7 @@ namespace BMoney.Indicator
                     var c = pool.GetCandle(i);
                     if (c.low < low) low = c.low;
                     if (c.high > high) high = c.high;
-                    if(double.IsNaN(open))
+                    if (double.IsNaN(open))
                     {
                         open = c.open;
                     }
@@ -42,7 +42,7 @@ namespace BMoney.Indicator
         }
         public static double[] CalcKDJ(CandlePool input, int kdjIndex, int candleIndex, int N = 9, int M1 = 3, int M2 = 3)
         {
-            IndicatorUtil.GetMinMaxPrice(input, candleIndex, N, out double min, out double max,out _,out _);
+            IndicatorUtil.GetMinMaxPrice(input, candleIndex, N, out double min, out double max, out _, out _);
             var candle = input.GetCandle(candleIndex);
             double RSV = 0;
             double k = 50;
@@ -71,17 +71,51 @@ namespace BMoney.Indicator
             //if (j > 100) j = 100;
             return new double[] { k, d, j };
         }
-        public static double CalcMA(CandlePool input,int candleIndex,int N)
+        public delegate double deleCalcFunc(Candle candle);
+        public static double CalcMAFunc(CandlePool input, int candleIndex, int N, deleCalcFunc func)
         {
-            double total=0;
-            int useN = 0 ;
-            for(var i=0;i<N;i++)
+            double total = 0;
+            int useN = 0;
+            for (var i = 0; i < N; i++)
             {
-                if(candleIndex-i<0)
+                if (candleIndex - i < 0)
                 {
                     break;
                 }
-                var candle = input.GetCandle(candleIndex-i);
+                var candle = input.GetCandle(candleIndex - i);
+                useN++;
+                total += func(candle);
+            }
+            return total / useN;
+        }
+        public static double CalcAVEDEVFunc(CandlePool input, int candleIndex, int N, deleCalcFunc func)
+        {
+            double ma = CalcMAFunc(input, candleIndex, N, func);
+            double total = 0;
+            int useN = 0;
+            for (var i = 0; i < N; i++)
+            {
+                if (candleIndex - i < 0)
+                {
+                    break;
+                }
+                var candle = input.GetCandle(candleIndex - i);
+                useN++;
+                total += Math.Abs(func(candle) -ma);
+            }
+            return total / useN;
+        }
+        public static double CalcMA(CandlePool input, int candleIndex, int N)
+        {
+            double total = 0;
+            int useN = 0;
+            for (var i = 0; i < N; i++)
+            {
+                if (candleIndex - i < 0)
+                {
+                    break;
+                }
+                var candle = input.GetCandle(candleIndex - i);
                 useN++;
                 total += candle.close;
             }
