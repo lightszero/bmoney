@@ -1,4 +1,6 @@
 ﻿
+using BMoney.Trade;
+
 namespace BMoney
 {
     static class Program
@@ -21,8 +23,8 @@ namespace BMoney
 
 
             //TestCandlePool_Random();//随机填充数据
-            //TestCandlePool_CSV();//从CSV加载数据
-            Test_Binance();//币安历史数据
+            TestCandlePool_CSV();//从CSV加载数据
+            //Test_Binance();//币安历史数据
 
 
             //Console.WriteLine("按任意键退出！！！");
@@ -41,7 +43,7 @@ namespace BMoney
             pool.RegIndicator(Indicator.IndicatorFactory.Create("MACD", null));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("BOLL", null));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("CCI", null));
-
+            pool.RegTrade("macd001",new Trade_ByMACD01());
 
             import.Start(pool);
 
@@ -75,13 +77,14 @@ namespace BMoney
             //pool.RegIndicator(Indicator.IndicatorFactory.Create("EMA", new string[] { "10", "30", "60" }));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("MACD", null));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("BOLL", null));
-            pool.RegIndicator(Indicator.IndicatorFactory.Create("x_vector", null));
-            pool.RegIndicator(Indicator.IndicatorFactory.Create("x_value", null));
+            pool.RegIndicator(Indicator.IndicatorFactory.Create("CCI", null));
+            pool.RegTrade("macd001", new Trade_ByMACD01());
+
             //使用import推数据进去
             import.Start(pool);
 
             pool.Dump();
-            pool.GenDatasForML("ml.csv",pool.GetIndicatorIndex("X_Vector", "XX"), 60);
+            //pool.GenDatasForML("ml.csv",pool.GetIndicatorIndex("X_Vector", "XX"), 60);
             HtmlView.Show(pool);
 
         }

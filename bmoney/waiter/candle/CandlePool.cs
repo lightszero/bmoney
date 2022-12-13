@@ -1,4 +1,6 @@
-﻿using System;
+﻿using BMoney.Indicator;
+using BMoney.Trade;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -72,6 +74,12 @@ namespace BMoney
             regdIndicator.Add(ind);
             ind.OnReg(this);
 
+        }
+        public void RegTrade(string name, ITrader trader)
+        {
+            var ind = new Indicator_Trade(name, trader);
+            regdIndicator.Add(ind);
+            ind.OnReg(this);
         }
         public void Push(Candle candle, bool final)
         {
@@ -238,18 +246,18 @@ namespace BMoney
             int id = GetLastestCandleID(out bool f1);
             StringBuilder total = new StringBuilder();
             StringBuilder line = new StringBuilder();
-            for(var i=0;i<N;i++)
+            for (var i = 0; i < N; i++)
             {
                 line.Append("k" + i.ToString("D4") + ",");
             }
             line.Append("will");
             total.Append(line.ToString());
             total.AppendLine();
-            for (var i =N;i<id-N;i++)
+            for (var i = N; i < id - N; i++)
             {
                 line.Clear();
 
-                for (var j = 1;j<=N;j++) //1~60
+                for (var j = 1; j <= N; j++) //1~60
                 {
                     var c = this.GetCandle(i - N + j);
                     line.Append(c.close + ",");
@@ -259,7 +267,7 @@ namespace BMoney
                 total.Append(line.ToString());
                 total.AppendLine();
             }
-            System.IO.File.WriteAllText(filename,total.ToString());
+            System.IO.File.WriteAllText(filename, total.ToString());
         }
     }
 }

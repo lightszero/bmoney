@@ -85,7 +85,7 @@ export class ChartView {
         //this.chart.createTechnicalIndicator("KDJ");
 
         //主图混
-        this.chart.createTechnicalIndicator({ name: "MA", calcParams: [5, 10] }, true, { id: 'candle_pane' });
+        this.chart.createTechnicalIndicator({ name: "EMA", calcParams: [12] }, true, { id: 'candle_pane' });
 
         //覆盖混在别的图上
          //if (paneid != null) {

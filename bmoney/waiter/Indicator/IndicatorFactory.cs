@@ -24,6 +24,8 @@ namespace BMoney.Indicator
 
                 if (t.GetInterface("IIndicator") != null)
                 {
+                    var ctor =t.GetConstructor(new Type[0]);//必须有无参构造
+                    if (ctor == null) continue;
                     //创建一个临时实例只是为了取得Name 和 InitParamDefine
                     var inst = System.Activator.CreateInstance(t) as IIndicator;
 
