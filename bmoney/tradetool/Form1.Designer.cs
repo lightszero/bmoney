@@ -88,7 +88,7 @@
             this.listBox1.ItemHeight = 12;
             this.listBox1.Location = new System.Drawing.Point(3, 17);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(365, 553);
+            this.listBox1.Size = new System.Drawing.Size(326, 421);
             this.listBox1.TabIndex = 1;
             // 
             // listBox2
@@ -98,7 +98,7 @@
             this.listBox2.ItemHeight = 12;
             this.listBox2.Location = new System.Drawing.Point(3, 17);
             this.listBox2.Name = "listBox2";
-            this.listBox2.Size = new System.Drawing.Size(365, 198);
+            this.listBox2.Size = new System.Drawing.Size(326, 147);
             this.listBox2.TabIndex = 2;
             // 
             // groupBox1
@@ -107,7 +107,7 @@
             this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox1.Location = new System.Drawing.Point(0, 0);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(371, 573);
+            this.groupBox1.Size = new System.Drawing.Size(332, 441);
             this.groupBox1.TabIndex = 3;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "用户信息";
@@ -118,7 +118,7 @@
             this.groupBox2.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox2.Location = new System.Drawing.Point(0, 0);
             this.groupBox2.Name = "groupBox2";
-            this.groupBox2.Size = new System.Drawing.Size(371, 218);
+            this.groupBox2.Size = new System.Drawing.Size(332, 167);
             this.groupBox2.TabIndex = 4;
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "简易行情显示";
@@ -138,7 +138,7 @@
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.splitContainer2);
-            this.splitContainer1.Size = new System.Drawing.Size(1113, 827);
+            this.splitContainer1.Size = new System.Drawing.Size(996, 644);
             this.splitContainer1.SplitterDistance = 28;
             this.splitContainer1.TabIndex = 5;
             // 
@@ -156,8 +156,8 @@
             // splitContainer2.Panel2
             // 
             this.splitContainer2.Panel2.Controls.Add(this.splitContainer3);
-            this.splitContainer2.Size = new System.Drawing.Size(1113, 795);
-            this.splitContainer2.SplitterDistance = 218;
+            this.splitContainer2.Size = new System.Drawing.Size(996, 612);
+            this.splitContainer2.SplitterDistance = 167;
             this.splitContainer2.TabIndex = 0;
             // 
             // splitContainer4
@@ -169,8 +169,8 @@
             // splitContainer4.Panel1
             // 
             this.splitContainer4.Panel1.Controls.Add(this.groupBox2);
-            this.splitContainer4.Size = new System.Drawing.Size(1113, 218);
-            this.splitContainer4.SplitterDistance = 371;
+            this.splitContainer4.Size = new System.Drawing.Size(996, 167);
+            this.splitContainer4.SplitterDistance = 332;
             this.splitContainer4.TabIndex = 5;
             // 
             // splitContainer3
@@ -186,8 +186,8 @@
             // splitContainer3.Panel2
             // 
             this.splitContainer3.Panel2.Controls.Add(this.groupBox3);
-            this.splitContainer3.Size = new System.Drawing.Size(1113, 573);
-            this.splitContainer3.SplitterDistance = 371;
+            this.splitContainer3.Size = new System.Drawing.Size(996, 441);
+            this.splitContainer3.SplitterDistance = 332;
             this.splitContainer3.TabIndex = 4;
             // 
             // groupBox3
@@ -353,10 +353,10 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1113, 827);
+            this.ClientSize = new System.Drawing.Size(996, 644);
             this.Controls.Add(this.splitContainer1);
             this.Name = "Form1";
-            this.Text = "Form1";
+            this.Text = "破产小助手，可以帮助你更快的赔钱";
             this.Load += new System.EventHandler(this.Form1_Load);
             this.groupBox1.ResumeLayout(false);
             this.groupBox2.ResumeLayout(false);
