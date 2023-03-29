@@ -83,7 +83,7 @@ namespace btrade
         public static void SetTrade(string symbol)
         {
             Symbol = symbol;
-            pricePrecision= allsymbol[symbol].PricePrecision;
+            pricePrecision = allsymbol[symbol].PricePrecision;
         }
         public static event Action<IBinanceStreamKlineData> OnKLine;
         //socket接口 ，实时行情
@@ -98,6 +98,8 @@ namespace btrade
 
         public static async void Go(bool longorshort, double count, decimal priceWin, decimal priceLose)
         {
+            //下单助手会先清理之前的，万一有个之前的止损单给我平仓了
+            var cresult = await rest.UsdFuturesApi.Trading.CancelAllOrdersAsync(Symbol);
 
             if (longorshort)
                 MarkBuy((decimal)count, (decimal)priceWin, (decimal)priceLose);
@@ -109,188 +111,98 @@ namespace btrade
         //开多
         static async void MarkBuy(decimal count, decimal priceWin, decimal priceLose)
         {
+            
+
+            BinanceFuturesBatchOrder[] orders = new BinanceFuturesBatchOrder[3];
             {//主要订单
-                Binance.Net.Enums.OrderSide orderSide = Binance.Net.Enums.OrderSide.Buy;
-                Binance.Net.Enums.PositionSide side = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
-                FuturesOrderType ordertype = FuturesOrderType.Market; //先开一个市价单
-
-                decimal? price = null;
-
-                decimal? activprice = null;//触发价格
-                decimal? stopprice = null;
-                decimal? callbackRate = null;//回撤率
-                bool? close = false;
-                var result = await rest.UsdFuturesApi.Trading.PlaceOrderAsync(Symbol,
-                    orderSide,//买？
-                    ordertype //市价单
-                    , count, price, side //价 量 方向
-                    , null//有效方法TimeInForce.FillOrKill
-                    , null//只减仓
-                    , null//订单id
-                    , stopprice//停止价格
-                    , activprice, callbackRate, WorkingType.Contract, //触发价，回撤率，触发方法
-                    close, //触发后平仓
-                    OrderResponseType.Acknowledge,
-                    false,//priceProtect
-                    null, CancellationToken.None);
-                if (!result.Success)
-                {
-                    Console.WriteLine("下单失败:" + result.Error.ToString());
-                    return;
-                }
+                BinanceFuturesBatchOrder order = new BinanceFuturesBatchOrder();
+                order.Side = Binance.Net.Enums.OrderSide.Buy;
+                order.PositionSide = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
+                order.Type = FuturesOrderType.Market;//先开一个市价单
+                order.Symbol = Symbol;
+                order.Quantity = count;//量
+                order.WorkingType = WorkingType.Contract;
+                orders[0] = order;
             }
             {//止盈
-                Binance.Net.Enums.OrderSide orderSide = Binance.Net.Enums.OrderSide.Sell;
-                Binance.Net.Enums.PositionSide side = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
-                FuturesOrderType ordertype = FuturesOrderType.TakeProfitMarket; //先开一个市价单
-
-                decimal? price = null;
-
-                decimal? activprice = null;//触发价格
-                decimal? stopprice = priceWin;
-                decimal? callbackRate = null;//回撤率
-                bool? close = true;//平仓
-                var result = await rest.UsdFuturesApi.Trading.PlaceOrderAsync(Symbol,
-                    orderSide,//买？
-                    ordertype //市价单
-                    , count, price, side //价 量 方向
-                    , null//有效方法TimeInForce.FillOrKill
-                    , null//只减仓
-                    , null//订单id
-                    , stopprice//停止价格
-                    , activprice, callbackRate, WorkingType.Contract, //触发价，回撤率，触发方法
-                    close, //触发后平仓
-                    OrderResponseType.Acknowledge,
-                    false,//priceProtect
-                    null, CancellationToken.None);
-                if (!result.Success)
-                {
-                    Console.WriteLine("下单失败:" + result.Error.ToString());
-                    return;
-                }
+                BinanceFuturesBatchOrder order = new BinanceFuturesBatchOrder();
+                order.Side = Binance.Net.Enums.OrderSide.Sell;
+                order.PositionSide = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
+                order.Type = FuturesOrderType.TakeProfitMarket;//止盈
+                order.Symbol = Symbol;
+                order.Quantity = count;
+                order.StopPrice = priceWin;
+                order.WorkingType = WorkingType.Contract;
+                //没有平仓选项了，只能按照数量，回头又得跑一下实时
+                orders[1] = order;
             }
             {//止损
-                Binance.Net.Enums.OrderSide orderSide = Binance.Net.Enums.OrderSide.Sell;
-                Binance.Net.Enums.PositionSide side = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
-                FuturesOrderType ordertype = FuturesOrderType.StopMarket; //先开一个市价单
-
-                decimal? price = null;
-
-                decimal? activprice = null;//触发价格
-                decimal? stopprice = priceLose;
-                decimal? callbackRate = null;//回撤率
-                bool? close = true;//平仓
-                var result = await rest.UsdFuturesApi.Trading.PlaceOrderAsync(Symbol,
-                    orderSide,//买？
-                    ordertype //市价单
-                    , count, price, side //价 量 方向
-                    , null//有效方法TimeInForce.FillOrKill
-                    , null//只减仓
-                    , null//订单id
-                    , stopprice//停止价格
-                    , activprice, callbackRate, WorkingType.Contract, //触发价，回撤率，触发方法
-                    close, //触发后平仓
-                    OrderResponseType.Acknowledge,
-                    false,//priceProtect
-                    null, CancellationToken.None);
-                if (!result.Success)
-                {
-                    Console.WriteLine("下单失败:" + result.Error.ToString());
-                    return;
-                }
+                BinanceFuturesBatchOrder order = new BinanceFuturesBatchOrder();
+                order.Side = Binance.Net.Enums.OrderSide.Sell;
+                order.PositionSide = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
+                order.Type = FuturesOrderType.StopMarket;//止损
+                order.Symbol = Symbol;
+                order.Quantity = count;
+                order.StopPrice = priceLose;
+                order.WorkingType = WorkingType.Contract;
+                //没有平仓选项了，只能按照数量，回头又得跑一下实时
+                orders[2] = order;
+            }
+            var result = await rest.UsdFuturesApi.Trading.PlaceMultipleOrdersAsync(orders);
+            if(result.Success==false)
+            {
+                Console.WriteLine("下单失败" + result.Error.ToString());
+            }
+            else
+            {
+                Console.WriteLine("下单成功");
             }
         }
         static async void MarkSell(decimal count, decimal priceWin, decimal priceLose)
         {
+            BinanceFuturesBatchOrder[] orders = new BinanceFuturesBatchOrder[3];
             {//主要订单
-                Binance.Net.Enums.OrderSide orderSide = Binance.Net.Enums.OrderSide.Sell;
-                Binance.Net.Enums.PositionSide side = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
-                FuturesOrderType ordertype = FuturesOrderType.Market; //先开一个市价单
-
-                decimal? price = null;
-
-                decimal? activprice = null;//触发价格
-                decimal? stopprice = null;
-                decimal? callbackRate = null;//回撤率
-                bool? close = false;
-                var result = await rest.UsdFuturesApi.Trading.PlaceOrderAsync(Symbol,
-                    orderSide,//买？
-                    ordertype //市价单
-                    , count, price, side //价 量 方向
-                    , null//有效方法TimeInForce.FillOrKill
-                    , null//只减仓
-                    , null//订单id
-                    , stopprice//停止价格
-                    , activprice, callbackRate, WorkingType.Contract, //触发价，回撤率，触发方法
-                    close, //触发后平仓
-                    OrderResponseType.Acknowledge,
-                    false,//priceProtect
-                    null, CancellationToken.None);
-                if (!result.Success)
-                {
-                    Console.WriteLine("下单失败:" + result.Error.ToString());
-                    return;
-                }
+                BinanceFuturesBatchOrder order = new BinanceFuturesBatchOrder();
+                order.Side = Binance.Net.Enums.OrderSide.Sell;
+                order.PositionSide = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
+                order.Type = FuturesOrderType.Market;//先开一个市价单
+                order.Symbol = Symbol;
+                order.Quantity = count;//量
+                order.WorkingType = WorkingType.Contract;
+                orders[0] = order;
             }
             {//止盈
-                Binance.Net.Enums.OrderSide orderSide = Binance.Net.Enums.OrderSide.Buy;
-                Binance.Net.Enums.PositionSide side = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
-                FuturesOrderType ordertype = FuturesOrderType.TakeProfitMarket; //止盈利单
-
-                decimal? price = null;
-
-                decimal? activprice = null;//触发价格
-                decimal? stopprice = priceWin;
-                decimal? callbackRate = null;//回撤率
-                bool? close = true;//平仓
-                var result = await rest.UsdFuturesApi.Trading.PlaceOrderAsync(Symbol,
-                    orderSide,//买？
-                    ordertype //市价单
-                    , count, price, side //价 量 方向
-                    , null//有效方法TimeInForce.FillOrKill
-                    , null//只减仓
-                    , null//订单id
-                    , stopprice//停止价格
-                    , activprice, callbackRate, WorkingType.Contract, //触发价，回撤率，触发方法
-                    close, //触发后平仓
-                    OrderResponseType.Acknowledge,
-                    false,//priceProtect
-                    null, CancellationToken.None);
-                if (!result.Success)
-                {
-                    Console.WriteLine("下单失败:" + result.Error.ToString());
-                    return;
-                }
+                BinanceFuturesBatchOrder order = new BinanceFuturesBatchOrder();
+                order.Side = Binance.Net.Enums.OrderSide.Buy;
+                order.PositionSide = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
+                order.Type = FuturesOrderType.TakeProfitMarket;//止盈
+                order.Symbol = Symbol;
+                order.Quantity = count;
+                order.StopPrice = priceWin;
+                order.WorkingType = WorkingType.Contract;
+                //没有平仓选项了，只能按照数量，回头又得跑一下实时
+                orders[1] = order;
             }
             {//止损
-                Binance.Net.Enums.OrderSide orderSide = Binance.Net.Enums.OrderSide.Buy;
-                Binance.Net.Enums.PositionSide side = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
-                FuturesOrderType ordertype = FuturesOrderType.StopMarket; //止损单
-
-                decimal? price = null;
-
-                decimal? activprice = null;//触发价格
-                decimal? stopprice = priceLose;
-                decimal? callbackRate = null;//回撤率
-                bool? close = true;//平仓
-                var result = await rest.UsdFuturesApi.Trading.PlaceOrderAsync(Symbol,
-                    orderSide,//买？
-                    ordertype //市价单
-                    , count, price, side //价 量 方向
-                    , null//有效方法TimeInForce.FillOrKill
-                    , null//只减仓
-                    , null//订单id
-                    , stopprice//停止价格
-                    , activprice, callbackRate, WorkingType.Contract, //触发价，回撤率，触发方法
-                    close, //触发后平仓
-                    OrderResponseType.Acknowledge,
-                    false,//priceProtect
-                    null, CancellationToken.None);
-                if (!result.Success)
-                {
-                    Console.WriteLine("下单失败:" + result.Error.ToString());
-                    return;
-                }
+                BinanceFuturesBatchOrder order = new BinanceFuturesBatchOrder();
+                order.Side = Binance.Net.Enums.OrderSide.Buy;
+                order.PositionSide = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
+                order.Type = FuturesOrderType.StopMarket;//止损
+                order.Symbol = Symbol;
+                order.Quantity = count;
+                order.StopPrice = priceLose;
+                order.WorkingType = WorkingType.Contract;
+                //没有平仓选项了，只能按照数量，回头又得跑一下实时
+                orders[2] = order;
+            }
+            var result = await rest.UsdFuturesApi.Trading.PlaceMultipleOrdersAsync(orders);
+            if (result.Success == false)
+            {
+                Console.WriteLine("下单失败" + result.Error.ToString());
+            }
+            else
+            {
+                Console.WriteLine("下单成功");
             }
         }
         static string nowsymbol;

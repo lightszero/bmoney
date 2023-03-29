@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using static System.Windows.Forms.AxHost;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.ProgressBar;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 
 namespace tradetool
@@ -63,8 +64,9 @@ namespace tradetool
 
             var sym = btrade.TradeTool.GetSymbol(btrade.TradeTool.Symbol);
             PricePrecision = sym.PricePrecision;
-            this.listBox2.Items[3] = "价格精度" + sym.PricePrecision;
-
+            NumPrecision = sym.QuantityPrecision;
+            this.listBox2.Items[3] = "价格精度" + PricePrecision;
+            this.listBox2.Items[4] = "数量精度" + NumPrecision;
             ResetPirce();
         }
 
@@ -79,9 +81,11 @@ namespace tradetool
         }
         double fee;
         int PricePrecision;
+        int NumPrecision;
         decimal finalprice;
         bool longorshort = true;
         int scale;
+        decimal count;
         double winpoint;
         double losepoint;
         decimal finalwinPrice;
@@ -105,7 +109,7 @@ namespace tradetool
             }
             finalwinPrice = decimal.Round((finalprice * (decimal)winv), PricePrecision);
             finallosePrice = decimal.Round((finalprice * (decimal)losev), PricePrecision);
-
+            label8.Text = "数量" + count;
             label3.Text = "止盈" + finalwinPrice;
             label4.Text = "止损" + finallosePrice;
         }
@@ -121,6 +125,8 @@ namespace tradetool
             {
                 losepoint = 0;
             }
+            if (decimal.TryParse(textBox5.Text, out count) == false)
+                count = 0;
             longorshort = radioButton1.Checked;
         }
         private void textBox1_TextChanged(object sender, EventArgs e)
@@ -165,16 +171,19 @@ namespace tradetool
 
         }
 
-        private void button1_Click(object sender, EventArgs e)
-        {
 
-        }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            double winv = (1.0 + (winpoint / scale) + 0.0003 + fee);
-            double losev = (1.0 - ((losepoint / scale) + 0.0003 - fee));
-            btrade.TradeTool.Go(longorshort, 10, finalwinPrice,finallosePrice);
+            btrade.TradeTool.Go(longorshort, 1, finalwinPrice,finallosePrice);
+        }
+
+        private void textBox5_TextChanged(object sender, EventArgs e)
+        {
+            if (decimal.TryParse(textBox5.Text, out count) == false)
+                count = 0;
+            count = decimal.Round(count, NumPrecision);
+            ResetPirce();
         }
     }
 }
