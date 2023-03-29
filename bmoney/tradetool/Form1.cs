@@ -1,4 +1,5 @@
 ﻿using Binance.Net.Interfaces;
+using Binance.Net.Objects.Models.Futures;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -27,23 +28,14 @@ namespace tradetool
             InitTrade();
             InitPrice();
         }
-
+        Dictionary<string, decimal> wallet = new Dictionary<string, decimal>();
         async void InitTrade()
         {
             await btrade.TradeTool.Init();
             var myip = "IP=" + btrade.TradeTool.IP;
             this.label1.Text = myip + " 这是一个币安下单助手，测试下单API的稳定性";
 
-            var info = await btrade.TradeTool.GetInfo();
-            this.listBox1.Items.Clear();
-            this.listBox1.Items.Add("CanTrade=" + info.CanTrade);
-            this.listBox1.Items.Add("CanDeposit=" + info.CanDeposit);
-            this.listBox1.Items.Add("CanWithdraw=" + info.CanWithdraw);
-            foreach (var a in info.Assets)
-            {
-                this.listBox1.Items.Add("item=" + a.Asset + "=" + a.AvailableBalance + " ," + a.WalletBalance);
-            }
-
+            await GetWallet();
 
             while (this.listBox2.Items.Count < 10)
                 this.listBox2.Items.Add("");
@@ -62,11 +54,14 @@ namespace tradetool
             fee = await btrade.TradeTool.GetFee();
             this.listBox2.Items[2] = "资金费率=" + fee;
 
-            var sym = btrade.TradeTool.GetSymbol(btrade.TradeTool.Symbol);
-            PricePrecision = sym.PricePrecision;
-            NumPrecision = sym.QuantityPrecision;
+            symbol = btrade.TradeTool.GetSymbol(btrade.TradeTool.Symbol);
+            PricePrecision = symbol.PricePrecision;
+            NumPrecision = symbol.QuantityPrecision;
+
             this.listBox2.Items[3] = "价格精度" + PricePrecision;
             this.listBox2.Items[4] = "数量精度" + NumPrecision;
+            this.listBox2.Items[5] = "BaseAsset:" + symbol.BaseAsset;
+            this.listBox2.Items[6] = "QuoteAsset:" + symbol.QuoteAsset;
             ResetPirce();
         }
 
@@ -76,10 +71,11 @@ namespace tradetool
 
             this.listBox2.Items[0] = kdata.Symbol + ":" + kdata.Data.CloseTime;
             this.listBox2.Items[1] = "最新价格=" + kdata.Data.ClosePrice;
-            finalprice =kdata.Data.ClosePrice;
+            finalprice = kdata.Data.ClosePrice;
             ResetPirce();
         }
         double fee;
+        BinanceFuturesUsdtSymbol symbol;
         int PricePrecision;
         int NumPrecision;
         decimal finalprice;
@@ -98,8 +94,8 @@ namespace tradetool
             double losev = 0;
             if (longorshort)
             {//做多
-                 winv = (1.0 + (winpoint / scale) + 0.0003 + fee);
-                 losev = (1.0 - ((losepoint / scale) + 0.0003 - fee));
+                winv = (1.0 + (winpoint / scale) + 0.0003 + fee);
+                losev = (1.0 - ((losepoint / scale) + 0.0003 - fee));
 
             }
             else
@@ -112,6 +108,19 @@ namespace tradetool
             label8.Text = "数量" + count;
             label3.Text = "止盈" + finalwinPrice;
             label4.Text = "止损" + finallosePrice;
+
+            //提醒用户，你会下单多少
+            if (symbol != null)
+            {
+                label9.Text = "单位" + symbol.BaseAsset + " = " + (finalprice * count) + symbol.QuoteAsset;
+
+                if (finalprice != 0)
+                {
+                    var maxcount = decimal.Round(wallet[symbol.QuoteAsset.ToLower()] * (decimal)scale / finalprice * (decimal)0.99, symbol.QuantityPrecision);
+                    label8.Text = "数量 " + count + "/" + maxcount;
+                    label7.Text = "最大可用 " + maxcount + symbol.BaseAsset + " = " + (finalprice * count) + symbol.QuoteAsset;
+                }
+            }
         }
         void InitPrice()
         {
@@ -175,7 +184,7 @@ namespace tradetool
 
         private void button2_Click(object sender, EventArgs e)
         {
-            btrade.TradeTool.Go(longorshort, 1, finalwinPrice,finallosePrice);
+            btrade.TradeTool.Go(longorshort, count, finalwinPrice, finallosePrice);
         }
 
         private void textBox5_TextChanged(object sender, EventArgs e)
@@ -184,6 +193,27 @@ namespace tradetool
                 count = 0;
             count = decimal.Round(count, NumPrecision);
             ResetPirce();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            //socket 订阅接口不起作用，只能刷钱包了
+            GetWallet();
+
+        }
+        async Task GetWallet()
+        {
+            var info = await btrade.TradeTool.GetInfo();
+            this.listBox1.Items.Clear();
+            this.listBox1.Items.Add("CanTrade=" + info.CanTrade);
+            this.listBox1.Items.Add("CanDeposit=" + info.CanDeposit);
+            this.listBox1.Items.Add("CanWithdraw=" + info.CanWithdraw);
+            foreach (var a in info.Assets)
+            {
+                this.listBox1.Items.Add("item=" + a.Asset + "=" + a.AvailableBalance + " ," + a.WalletBalance);
+                wallet[a.Asset.ToLower()] = a.AvailableBalance;
+            }
+
         }
     }
 }
