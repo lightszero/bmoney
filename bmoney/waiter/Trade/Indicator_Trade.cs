@@ -23,7 +23,6 @@ namespace BMoney.Indicator
         }
         double money;
         decimal holdvol;//持仓
-        double shortmoney;//担保金
 
         public double MoneyTotal
         {
@@ -86,16 +85,16 @@ namespace BMoney.Indicator
             //先平仓
             if (holdvol < 0 && (action == TradeAction.GoLong || action == TradeAction.Close))
             {
-                money = money + shortmoney + shortmoney - ((double)-holdvol * price);
-                money -= shortmoney * fee;//扣万五手续费，上难度
-                shortmoney = 0;
+                var tmoney = ((double)-holdvol * price);
+                money = money - tmoney;
+                money -= tmoney * fee;//扣万五手续费，上难度
                 holdvol = 0;
             }
             if (holdvol > 0 && (action == TradeAction.Short || action == TradeAction.Close))
             {
-                var longmoney = ((double)holdvol * price);
-                money = money + longmoney;
-                money -= longmoney * fee;//扣万五手续费，上难度
+                var tmoney = ((double)holdvol * price);
+                money = money + tmoney;
+                money -= tmoney * fee;//扣万五手续费，上难度
                 holdvol = 0;
             }
 
@@ -103,26 +102,25 @@ namespace BMoney.Indicator
             if (action == TradeAction.GoLong) //做多
             {
 
-                var longmoney = price * 1.0;//先买一个
-                money -= longmoney;
+                var tmoney = price * 1.0;//先买一个
+                money -= tmoney;
 
-                money -= longmoney * fee;//扣万五手续费，上难度
+                money -= tmoney * fee;//扣万五手续费，上难度
                 this.holdvol += (decimal)1.0;
             }
             if (action == TradeAction.Short)//做空
             {
-                shortmoney = price * 1.0;//保证金
+                var tmoney = price * 1.0;//保证金
                 this.holdvol -= (decimal)1.0;
-                money -= shortmoney; //不结算money不变
+                money += tmoney; //借来的钱
 
-                money -= shortmoney * fee;//扣万五手续费，上难度
+                money -= tmoney * fee;//扣万五手续费，上难度
             }
 
 
-            var longm = holdvol > 0 ? ((double)holdvol * price) : 0;
-            var shortm = holdvol < 0 ? shortmoney + shortmoney - ((double)-holdvol * price) : 0;
 
-            MoneyTotal = money + longm + shortm;
+
+            MoneyTotal = money + ((double)holdvol * price);
             return new double[] { (double)holdvol };
         }
 
