@@ -7,22 +7,36 @@ using System.Threading.Tasks;
 
 namespace BMoney.Indicator
 {
+    //资金跟踪指标
 
 
     internal class Indicator_Trade : IIndicator
     {
         ITrader trader;
 
+        public double Money
+        {
+            get
+            {
+                return money;
+            }
+        }
         double money;
+        decimal holdvol;//持仓
         double shortmoney;//担保金
-        double longvalue;
-        double shortvalue;
+
+        public double MoneyTotal
+        {
+            get;
+            private set;
+
+        }
         //有参构造，这个指标是特别的
         public Indicator_Trade(string name, ITrader trader)
         {
             Name = "Trade_" + name;
             this.trader = trader;
-            this.money = trader.InitMoney;
+            this.money = 10000.0;//10000美元本金
         }
         public string Name
         {
@@ -42,7 +56,11 @@ namespace BMoney.Indicator
         }
         public string[] GetValuesDefine()
         {
-            return new string[] { "M", "L", "S", "CL", "CS" };
+
+            //太乱，直接用一个值改进，持仓，+1 -1
+
+            //Money //做多 //做空 //多结束 //空结束
+            return new string[] { "hold$bar$0" };
         }
 
 
@@ -61,59 +79,99 @@ namespace BMoney.Indicator
             var candle = input.GetCandle(candleIndex);
             var price = (candle.high + candle.low) / 2;
 
-            var items = trader.OnStick(input, candleIndex);
-            bool hasgolang = false;
-            bool hasshort = false;
-            bool hasCloseLang = false;
-            bool hasCloseShort = false;
-            if (items != null)
+            var action = trader.OnStick(input, candleIndex, money, holdvol);
+
+            var fee = 0.0001;//万五手续费+上
+
+            //先平仓
+            if (holdvol < 0 && (action == TradeAction.GoLong || action == TradeAction.Close))
             {
-                foreach (var item in items)
-                {
-                    if (item.action == TradeAction.None)
-                        continue;
-                    //判断做了什么操作，在这里模拟算钱
-                    if (item.action == TradeAction.GoLong)
-                    {
-                        this.money -= item.price * item.value;
-                        this.longvalue += item.value;
-                        hasgolang = true;
-                    }
-                    else if (item.action == TradeAction.CloseLong)
-                    {
-                        this.longvalue -= item.value;
-                        this.money += item.price * item.value;
-                        hasCloseLang = true;
-                    }
-                    else if (item.action == TradeAction.Short)
-                    {
-                        this.shortvalue += item.value; //开空单
-                        var trademoney = item.price * item.value;
-                        this.shortmoney += trademoney;
-                        this.money -= trademoney; //开空单扣掉的钱是担保，
-                        hasshort = true;
-                    }
-                    else if (item.action == TradeAction.CloseShort)//结空单算钱很麻烦
-                    {
-                        var shortprice = this.shortmoney / this.shortvalue;
-                        var trademoney = item.value * shortprice;
+                money = money + shortmoney + shortmoney - ((double)-holdvol * price);
+                money -= shortmoney * fee;//扣万五手续费，上难度
+                shortmoney = 0;
+                holdvol = 0;
+            }
+            if (holdvol > 0 && (action == TradeAction.Short || action == TradeAction.Close))
+            {
+                var longmoney = ((double)holdvol * price);
+                money = money + longmoney;
+                money -= longmoney * fee;//扣万五手续费，上难度
+                holdvol = 0;
+            }
 
-                        this.shortvalue -= item.value;
-                        this.shortmoney -= trademoney;//还钱
-                        this.money += trademoney;
+            //判断做了什么操作，在这里模拟算钱
+            if (action == TradeAction.GoLong) //做多
+            {
 
-                        this.money += trademoney - item.price * item.value; //得到担保金，损失现价
-                        hasCloseShort = true;
-                    }
-                    //判断完还得给他丢回去
-                    trader.TradeResult(candleIndex, item);
-                }
+                var longmoney = price * 1.0;//先买一个
+                money -= longmoney;
+
+                money -= longmoney * fee;//扣万五手续费，上难度
+                this.holdvol += (decimal)1.0;
+            }
+            if (action == TradeAction.Short)//做空
+            {
+                shortmoney = price * 1.0;//保证金
+                this.holdvol -= (decimal)1.0;
+                money -= shortmoney; //不结算money不变
+
+                money -= shortmoney * fee;//扣万五手续费，上难度
             }
 
 
-            var moneytotal = money + price * longvalue + shortmoney;
-            return new double[] { moneytotal, hasgolang ? 1000 : 0, hasshort ? 1000 : 0, hasCloseLang ? 1000 : 0, hasCloseShort ? 1000 : 0 };
+            var longm = holdvol > 0 ? ((double)holdvol * price) : 0;
+            var shortm = holdvol < 0 ? shortmoney + shortmoney - ((double)-holdvol * price) : 0;
+
+            MoneyTotal = money + longm + shortm;
+            return new double[] { (double)holdvol };
         }
 
+    }
+
+
+    internal class Indicator_TradeRes : IIndicator
+    {
+
+        public Indicator_TradeRes(Indicator_Trade trade)
+        {
+            Name = trade.Name + "(Res)";
+            this.trade = trade;
+        }
+        Indicator_Trade trade;
+        public string Name
+        {
+            get;
+            private set;
+        }
+
+        public string Description => "用跟踪指标来计算收益的指标";
+
+        public double[] CalcValues(CandlePool input, int indicatorIndex, int candleIndex)
+        {
+            return new double[1] { trade.MoneyTotal };
+        }
+
+        public string[] GetInitParamDefine()
+        {
+            return new string[] { };
+        }
+
+        public string[] GetParamValue()
+        {
+            return new string[] { };
+        }
+
+        public string[] GetValuesDefine()
+        {
+            return new string[] { "M" };
+        }
+
+        public void Init(string[] Param)
+        {
+        }
+
+        public void OnReg(CandlePool input)
+        {
+        }
     }
 }

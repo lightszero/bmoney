@@ -78,7 +78,10 @@ namespace BMoney
         public void RegTrade(string name, ITrader trader)
         {
             var ind = new Indicator_Trade(name, trader);
+            var indres = new Indicator_TradeRes(ind);
+
             regdIndicator.Add(ind);
+            regdIndicator.Add(indres);
             ind.OnReg(this);
         }
         public void Push(Candle candle, bool final)
