@@ -34,26 +34,42 @@ namespace BMoney.Trade
             TradeAction action = TradeAction.None;
             double macd_m1 = IndicatorUtil.GetFromIndex(pool, depend_macd, candleIndex - 1);
             double macd = IndicatorUtil.GetFromIndex(pool, depend_macd, candleIndex);
+            double dif = IndicatorUtil.GetFromIndex(pool, depend_dif, candleIndex);
             if (macd < 0 && macd_m1 >= 0)
             {//下交叉，看跌
-                if (holdvol > 0)//持多仓
+                if (dif > 1.0)
                 {
-                    return TradeAction.Short;//做空 （自动平仓）
+                    if (holdvol > 0)//持多仓
+                    {
+                        return TradeAction.Short;//做空 （自动平仓）
+                    }
+                    else if (holdvol == 0)//空仓
+                    {
+                        return TradeAction.Short;//做空
+                    }
                 }
-                else if (holdvol == 0)//空仓
+                else
                 {
-                    return TradeAction.Short;//做空
+                    return TradeAction.Close;//平仓
                 }
             }
             else if (macd > 0 && macd_m1 <= 0)
             {
-                if (holdvol < 0)//持多仓
+
+                if (dif < -1.0)
                 {
-                    return TradeAction.GoLong;//做多 （自动平仓）
+                    if (holdvol < 0)//持多仓
+                    {
+                        return TradeAction.GoLong;//做多 （自动平仓）
+                    }
+                    else if (holdvol == 0)//空仓
+                    {
+                        return TradeAction.GoLong;//做空
+                    }
                 }
-                else if (holdvol == 0)//空仓
+                else
                 {
-                    return TradeAction.GoLong;//做空
+                    return TradeAction.Close;//平仓
                 }
             }
 

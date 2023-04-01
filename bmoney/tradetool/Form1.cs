@@ -25,6 +25,9 @@ namespace tradetool
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            var path = System.IO.Path.GetDirectoryName(this.GetType().Assembly.Location);
+            var fullfile = System.IO.Path.Combine(path, "datapage", "index.html");
+            this.webView21.Source = new Uri(fullfile);
             InitTrade();
             InitPrice();
         }
@@ -210,6 +213,7 @@ namespace tradetool
             this.listBox1.Items.Add("CanWithdraw=" + info.CanWithdraw);
             foreach (var a in info.Assets)
             {
+                if (a.AvailableBalance != 0 || a.WalletBalance != 0) ;
                 this.listBox1.Items.Add("item=" + a.Asset + "=" + a.AvailableBalance + " ," + a.WalletBalance);
                 wallet[a.Asset.ToLower()] = a.AvailableBalance;
             }

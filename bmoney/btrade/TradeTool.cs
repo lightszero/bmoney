@@ -23,8 +23,7 @@ namespace btrade
             get;
             private set;
         }
-        static BinanceSocketClient socketKLine;
-        static BinanceSocketClient socketInfo;
+        static BinanceSocketClient socket;
         static BinanceClient rest;
         public static async Task Init()
         {
@@ -34,8 +33,7 @@ namespace btrade
             IP = JObject.Parse(str)["ip"].ToString();
 
             rest = new BinanceClient();
-            socketKLine = new BinanceSocketClient();
-            socketInfo = new BinanceSocketClient();
+            socket = new BinanceSocketClient();
             rest.SetApiCredentials(new Binance.Net.Objects.BinanceApiCredentials(key.apikey, key.secert));
 
             var p2 = await rest.UsdFuturesApi.ExchangeData.GetExchangeInfoAsync(CancellationToken.None);
@@ -45,9 +43,9 @@ namespace btrade
             {
                 allsymbol[s.Name.ToLower()] = s;
             }
-            
+
             //实时取余额不行了
-            //StartUserInfoSocket();
+            StartUserInfoSocket();
 
 
             SetTrade("ethbusd");
@@ -92,16 +90,18 @@ namespace btrade
         }
         public static event Action<IBinanceStreamKlineData> OnKLine;
         //socket接口 ，实时行情
+        public static event Action<BinanceFuturesStreamAccountUpdate> OnAccountUpdate;
 
+        public static event Action<BinanceFuturesStreamOrderUpdate> OnOrderUpdate;
         //很遗憾，拿余额的接口不工作，没关系，我们还有rest版本
-        //static void OnAccountUpdate(DataEvent<BinanceFuturesStreamAccountUpdate> e)
-        //{
-        //    Console.WriteLine("收到账户变化");
-        //}
-        //static void OnOrderUpdate(DataEvent<BinanceFuturesStreamOrderUpdate> e)
-        //{
-        //    Console.WriteLine("收到订单变化");
-        //}
+        static void CBOnAccountUpdate(DataEvent<BinanceFuturesStreamAccountUpdate> e)
+        {
+            Console.WriteLine("收到账户变化");
+        }
+        static void CBOnOrderUpdate(DataEvent<BinanceFuturesStreamOrderUpdate> e)
+        {
+            Console.WriteLine("收到订单变化");
+        }
 
         public static async void Go(bool longorshort, decimal count, decimal priceWin, decimal priceLose)
         {
@@ -118,7 +118,7 @@ namespace btrade
         //开多
         static async void MarkBuy(decimal count, decimal priceWin, decimal priceLose)
         {
-            
+
 
             BinanceFuturesBatchOrder[] orders = new BinanceFuturesBatchOrder[3];
             {//主要订单
@@ -156,7 +156,7 @@ namespace btrade
                 orders[2] = order;
             }
             var result = await rest.UsdFuturesApi.Trading.PlaceMultipleOrdersAsync(orders);
-            if(result.Success==false)
+            if (result.Success == false)
             {
                 Console.WriteLine("下单失败" + result.Error.ToString());
             }
@@ -218,7 +218,7 @@ namespace btrade
             while (true)
             {
                 System.Threading.CancellationToken token = System.Threading.CancellationToken.None;
-                var result = await socketKLine.UsdFuturesStreams.SubscribeToKlineUpdatesAsync(Symbol, Binance.Net.Enums.KlineInterval.OneMinute, (kdata) =>
+                var result = await socket.UsdFuturesStreams.SubscribeToKlineUpdatesAsync(Symbol, Binance.Net.Enums.KlineInterval.OneMinute, (kdata) =>
                 {
                     if (OnKLine != null)
                     {
@@ -251,32 +251,61 @@ namespace btrade
                 await Task.Delay(1);
             }
         }
-        //static async void StartUserInfoSocket()
-        //{
+        static async void StartUserInfoSocket()
+        {
 
-        //    System.Threading.CancellationToken token = System.Threading.CancellationToken.None;
-        //    var result = await socketInfo.UsdFuturesStreams.SubscribeToUserDataUpdatesAsync(key.apikey, null, null, OnAccountUpdate, OnOrderUpdate, null, null, null, token);
-        //    if (result.Error != null)
-        //    {
-        //        Console.Error.WriteLine(result.Error.Message);
-        //        throw new Exception("socket 连接错误");
-        //    }
-        //    bool closed = false;
-        //    result.Data.ConnectionClosed += () =>
-        //    {
-        //        closed = true;
-        //    };
-        //    while (!closed)
-        //    {
-        //        //if (!IsActive)
-        //        {
-        //            //await result.Data.CloseAsync();
-        //            //bLiveStop = true;
-        //        }
-        //        await Task.Delay(100);
-        //    }
+            System.Threading.CancellationToken token = System.Threading.CancellationToken.None;
+            var listenkey = await rest.UsdFuturesApi.Account.StartUserStreamAsync();
+            Console.WriteLine("got key=" + listenkey.Data);
+            var result = await socket.UsdFuturesStreams.SubscribeToUserDataUpdatesAsync(listenkey.Data, (e) =>
+            {
+                Console.WriteLine("==SubscribeToUserDataUpdatesAsync==" + e.GetType().Name);
+            },
+            (e) =>
+            {
+                Console.WriteLine("==SubscribeToUserDataUpdatesAsync==" + e.GetType().Name);
+            },
+            CBOnAccountUpdate, CBOnOrderUpdate,
+             (e) =>
+             {
+                 Console.WriteLine("==SubscribeToUserDataUpdatesAsync==" + e.GetType().Name);
+             }
+            ,
+             (e) =>
+            {
+                Console.WriteLine("==SubscribeToUserDataUpdatesAsync==" + e.GetType().Name);
+            }
+            ,
+             (e) =>
+            {
+                Console.WriteLine("==SubscribeToUserDataUpdatesAsync==" + e.GetType().Name);
+            }
+            , token);
+            if (result.Error != null)
+            {
+                Console.Error.WriteLine(result.Error.Message);
+                throw new Exception("socket 连接错误");
+            }
+            else
+            {
+                Console.WriteLine("订阅用户信息" + result.OriginalData);
+            }
+            bool closed = false;
+            result.Data.ConnectionClosed += () =>
+            {
+                closed = true;
+            };
+            while (!closed)
+            {
+                //if (!IsActive)
+                {
+                    //await result.Data.CloseAsync();
+                    //bLiveStop = true;
+                }
+                await Task.Delay(100);
+            }
 
-        //    Console.WriteLine("订阅断线，重联。");
-        //}
+            Console.WriteLine("订阅断线，重联。");
+        }
     }
 }
