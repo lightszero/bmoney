@@ -57,6 +57,9 @@
             this.label4 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.labelPrice = new System.Windows.Forms.Label();
+            this.label10 = new System.Windows.Forms.Label();
+            this.button3 = new System.Windows.Forms.Button();
+            this.textBox2 = new System.Windows.Forms.TextBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
@@ -98,7 +101,7 @@
             this.listBox1.ItemHeight = 12;
             this.listBox1.Location = new System.Drawing.Point(3, 17);
             this.listBox1.Name = "listBox1";
-            this.listBox1.Size = new System.Drawing.Size(336, 242);
+            this.listBox1.Size = new System.Drawing.Size(336, 181);
             this.listBox1.TabIndex = 1;
             // 
             // listBox2
@@ -117,7 +120,7 @@
             this.groupBox1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox1.Location = new System.Drawing.Point(0, 0);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(342, 262);
+            this.groupBox1.Size = new System.Drawing.Size(342, 201);
             this.groupBox1.TabIndex = 3;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "钱包信息";
@@ -230,11 +233,14 @@
             // 
             this.splitContainer3.Panel2.Controls.Add(this.groupBox3);
             this.splitContainer3.Size = new System.Drawing.Size(342, 473);
-            this.splitContainer3.SplitterDistance = 262;
+            this.splitContainer3.SplitterDistance = 201;
             this.splitContainer3.TabIndex = 4;
             // 
             // groupBox3
             // 
+            this.groupBox3.Controls.Add(this.textBox2);
+            this.groupBox3.Controls.Add(this.button3);
+            this.groupBox3.Controls.Add(this.label10);
             this.groupBox3.Controls.Add(this.button1);
             this.groupBox3.Controls.Add(this.label9);
             this.groupBox3.Controls.Add(this.textBox5);
@@ -255,7 +261,7 @@
             this.groupBox3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox3.Location = new System.Drawing.Point(0, 0);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(342, 207);
+            this.groupBox3.Size = new System.Drawing.Size(342, 268);
             this.groupBox3.TabIndex = 0;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "下单助手";
@@ -301,9 +307,9 @@
             // 
             this.button2.Location = new System.Drawing.Point(117, 166);
             this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(148, 23);
+            this.button2.Size = new System.Drawing.Size(100, 23);
             this.button2.TabIndex = 14;
-            this.button2.Text = "开单,慎重，破产警告";
+            this.button2.Text = "下单,慎重";
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
@@ -422,6 +428,34 @@
             this.labelPrice.TabIndex = 0;
             this.labelPrice.Text = "现价";
             // 
+            // label10
+            // 
+            this.label10.AutoSize = true;
+            this.label10.Location = new System.Drawing.Point(7, 201);
+            this.label10.Name = "label10";
+            this.label10.Size = new System.Drawing.Size(53, 12);
+            this.label10.TabIndex = 19;
+            this.label10.Text = "持有仓位";
+            // 
+            // button3
+            // 
+            this.button3.Location = new System.Drawing.Point(255, 196);
+            this.button3.Name = "button3";
+            this.button3.Size = new System.Drawing.Size(75, 23);
+            this.button3.TabIndex = 20;
+            this.button3.Text = "平仓";
+            this.button3.UseVisualStyleBackColor = true;
+            this.button3.Click += new System.EventHandler(this.button3_Click);
+            // 
+            // textBox2
+            // 
+            this.textBox2.Location = new System.Drawing.Point(66, 196);
+            this.textBox2.Name = "textBox2";
+            this.textBox2.ReadOnly = true;
+            this.textBox2.Size = new System.Drawing.Size(183, 21);
+            this.textBox2.TabIndex = 21;
+            this.textBox2.Text = "0.02";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -491,6 +525,9 @@
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.SplitContainer splitContainer5;
         private Microsoft.Web.WebView2.WinForms.WebView2 webView21;
+        private System.Windows.Forms.TextBox textBox2;
+        private System.Windows.Forms.Button button3;
+        private System.Windows.Forms.Label label10;
     }
 }
 

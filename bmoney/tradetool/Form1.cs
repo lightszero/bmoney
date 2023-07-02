@@ -137,11 +137,38 @@ namespace tradetool
 
                 if (finalprice != 0)
                 {
-                    var maxcount = decimal.Round(tradetool.wallet.GetBalance( symbol.QuoteAsset.ToLower()) * (decimal)scale / finalprice * (decimal)0.99, symbol.QuantityPrecision);
+                    var maxcount = decimal.Round(tradetool.wallet.GetBalance(symbol.QuoteAsset.ToLower()) * (decimal)scale / finalprice * (decimal)0.99, symbol.QuantityPrecision);
                     label8.Text = "数量 " + count + "/" + maxcount;
                     label7.Text = "最大可用 " + maxcount + symbol.BaseAsset + " = " + (finalprice * count) + symbol.QuoteAsset;
                 }
             }
+
+            if (tradetool.wallet.positions.TryGetValue(trader.Symbol, out var position) == false || position.count == 0)
+            {
+                textBox2.Text = "0";
+                button3.Enabled = false;
+                button2.Enabled = true;
+            }
+            else
+            {
+                decimal win = 0;
+                if (position.count > 0)
+                {
+                    var tpos = (finalprice - position.price) * position.count;
+                    win = tpos * ((decimal)1 - (decimal)0.0003 - (decimal)fee);
+                }
+                else
+                {
+                    var tpos = (finalprice - position.price) * position.count;
+                    win = tpos * ((decimal)1 - (decimal)0.0003 + (decimal)fee);
+                }
+                textBox2.Text = position.count + " 浮盈:" + win;
+                button3.Enabled = true;
+                button2.Enabled = false;
+            }
+
+
+
         }
         void InitPrice()
         {
@@ -203,9 +230,10 @@ namespace tradetool
 
 
 
-        private void button2_Click(object sender, EventArgs e)
+        private async void button2_Click(object sender, EventArgs e)
         {
-            trader.MakeOrder(longorshort, count, finalwinPrice, finallosePrice);
+            button2.Enabled = false;
+            await trader.MakeOrder(longorshort, count, finalwinPrice, finallosePrice);
         }
 
         private void textBox5_TextChanged(object sender, EventArgs e)
@@ -249,6 +277,20 @@ namespace tradetool
                 }
             }
 
+        }
+
+        private async void button3_Click(object sender, EventArgs e)
+        {
+            button3.Enabled = false;
+            var pos = tradetool.wallet.GetPosition(trader.Symbol);
+            if (pos > 0)
+            {
+                await trader.MakeOrder_Sell(pos);
+            }
+            else if (pos < 0)
+            {
+                await trader.MakeOrder_Buy(-pos);
+            }
         }
     }
 }
