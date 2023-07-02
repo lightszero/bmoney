@@ -22,8 +22,8 @@ namespace BMoney.Indicator
             }
         }
         double money;
-        decimal holdvol;//持仓
-
+        double holdvol;//持仓
+        double holdprice;//持有价格
         public double MoneyTotal
         {
             get;
@@ -78,9 +78,9 @@ namespace BMoney.Indicator
             var candle = input.GetCandle(candleIndex);
             var price = (candle.high + candle.low) / 2;
 
-            var action = trader.OnStick(input, candleIndex, money, holdvol);
+            var action = trader.OnStick(input, candleIndex, money, holdvol, holdprice);
 
-            var fee = 0.0000;//万五手续费+上
+            var fee = 0.0000;// 0.0005;//万五手续费+上
 
             //先平仓
             if (holdvol < 0 && (action == TradeAction.GoLong || action == TradeAction.Close))
@@ -89,6 +89,7 @@ namespace BMoney.Indicator
                 money = money - tmoney;
                 money -= tmoney * fee;//扣万五手续费，上难度
                 holdvol = 0;
+                holdprice = 0;
             }
             if (holdvol > 0 && (action == TradeAction.Short || action == TradeAction.Close))
             {
@@ -96,6 +97,7 @@ namespace BMoney.Indicator
                 money = money + tmoney;
                 money -= tmoney * fee;//扣万五手续费，上难度
                 holdvol = 0;
+                holdprice = 0;
             }
 
             //判断做了什么操作，在这里模拟算钱
@@ -106,12 +108,14 @@ namespace BMoney.Indicator
                 money -= tmoney;
 
                 money -= tmoney * fee;//扣万五手续费，上难度
-                this.holdvol += (decimal)1.0;
+                this.holdvol += 1.0;
+                this.holdprice = price;
             }
             if (action == TradeAction.Short)//做空
             {
                 var tmoney = price * 1.0;//保证金
-                this.holdvol -= (decimal)1.0;
+                this.holdvol -= 1.0;
+                this.holdprice = price;
                 money += tmoney; //借来的钱
 
                 money -= tmoney * fee;//扣万五手续费，上难度

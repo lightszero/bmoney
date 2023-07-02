@@ -38,7 +38,7 @@ namespace BMoney
             var import = new data.BinanceImporter(false, startonM, TimeSpan.FromMinutes(1.0));
             CandlePool pool = new CandlePool("tpool", import.Tick);
             //注册一个新的指标，必须在push data之前
-            pool.RegIndicator(Indicator.IndicatorFactory.Create("KDJ", new string[] { "9", "3", "3" }));
+            pool.RegIndicator(Indicator.IndicatorFactory.Create("KDJ", new string[] { "24", "3", "3" }));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("EMA", null));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("MACD", null));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("BOLL", null));
@@ -73,7 +73,7 @@ namespace BMoney
             var import = new data.CSVImporter(file);
             CandlePool pool = new CandlePool("tpool", import.Tick);
             //注册一个新的指标，必须在push data之前
-            pool.RegIndicator(Indicator.IndicatorFactory.Create("KDJ", new string[] { "9", "3", "3" }));
+            pool.RegIndicator(Indicator.IndicatorFactory.Create("KDJ", new string[] { "18", "3", "3" }));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("EMA", null));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("MACD", null));
             pool.RegIndicator(Indicator.IndicatorFactory.Create("BOLL", null));

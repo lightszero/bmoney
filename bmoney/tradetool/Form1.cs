@@ -2,17 +2,8 @@
 using Binance.Net.Objects.Models.Futures;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Windows.Forms.AxHost;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ProgressBar;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.ToolTip;
 
 namespace tradetool
 {
@@ -27,7 +18,7 @@ namespace tradetool
         {
             var path = System.IO.Path.GetDirectoryName(this.GetType().Assembly.Location);
             var fullfile = System.IO.Path.Combine(path, "datapage", "index.html");
-            this.webView21.Source = new Uri(fullfile);
+
             InitTrade();
             InitPrice();
         }
@@ -35,10 +26,12 @@ namespace tradetool
         async void InitTrade()
         {
             await btrade.TradeTool.Init();
+
+            this.webView21.Source = new Uri("https://www.binance.com/en/futures/" + btrade.TradeTool.Symbol);
             var myip = "IP=" + btrade.TradeTool.IP;
             this.label1.Text = myip + " 这是一个币安下单助手，测试下单API的稳定性";
 
-            await GetWallet();
+            await UpdateWalletUI();
 
             while (this.listBox2.Items.Count < 10)
                 this.listBox2.Items.Add("");
@@ -53,6 +46,22 @@ namespace tradetool
                 //处理线程安全
                 Action<IBinanceStreamKlineData> onk = FillKLine;
                 this.Invoke(onk, kdata);
+            };
+            btrade.TradeTool.OnWalletUpdate += () =>
+            {
+                Action onacc = () =>
+                {
+                    UpdateWalletUI();
+                };
+                this.Invoke(onacc);
+            };
+            btrade.TradeTool.OnOrderUpdate += (s) =>
+            {
+                Action onacc = () =>
+                {
+                    UpdateWalletUI();
+                };
+                this.Invoke(onacc);
             };
             fee = await btrade.TradeTool.GetFee();
             this.listBox2.Items[2] = "资金费率=" + fee;
@@ -198,24 +207,37 @@ namespace tradetool
             ResetPirce();
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private async void button1_Click(object sender, EventArgs e)
         {
             //socket 订阅接口不起作用，只能刷钱包了
-            GetWallet();
+            await btrade.TradeTool.UpdateWallet();
+            await btrade.TradeTool.UpdateOrder(btrade.TradeTool.Symbol);
+            await UpdateWalletUI();
 
         }
-        async Task GetWallet()
+        async Task UpdateWalletUI()
         {
-            var info = await btrade.TradeTool.GetInfo();
+            var info = await btrade.TradeTool.GetWallet();
+
             this.listBox1.Items.Clear();
             this.listBox1.Items.Add("CanTrade=" + info.CanTrade);
             this.listBox1.Items.Add("CanDeposit=" + info.CanDeposit);
             this.listBox1.Items.Add("CanWithdraw=" + info.CanWithdraw);
-            foreach (var a in info.Assets)
+
+            foreach (var a in info.balance.Values)
             {
-                if (a.AvailableBalance != 0 || a.WalletBalance != 0) ;
-                this.listBox1.Items.Add("item=" + a.Asset + "=" + a.AvailableBalance + " ," + a.WalletBalance);
-                wallet[a.Asset.ToLower()] = a.AvailableBalance;
+                if (a.Available != 0 || a.Wallet != 0)
+                {
+                    this.listBox1.Items.Add("余额 " + a.symbol + "=" + a.Available + "/" + a.Wallet);
+                    wallet[a.symbol.ToLower()] = a.Available;
+                }
+            }
+            foreach (var p in info.positions.Values)
+            {
+                if (p.count != 0)
+                {
+                    this.listBox1.Items.Add("仓位 " + p.symbol + "=" + p.count + "(" + p.price + ") stop(" + p.priceStopMin + "," + p.priceStopMax + ")");
+                }
             }
 
         }

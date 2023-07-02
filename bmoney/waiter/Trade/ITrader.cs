@@ -47,7 +47,7 @@ namespace BMoney.Trade
     public interface ITrader
     {
         void OnReg(CandlePool pool);
-        TradeAction OnStick(CandlePool pool, int candleIndex, double money, decimal holdvol);
+        TradeAction OnStick(CandlePool pool, int candleIndex, double money, double holdvol, double holdprice);
 
         //public double InitMoney
         //{

@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace BMoney.Trade
 {
     class Trade_ByMACD01 : ITrader
     {
-        bool binit = false;
+
         IndicatorValueIndex depend_ema12;
         IndicatorValueIndex depend_dif;
         IndicatorValueIndex depend_dea;
@@ -24,7 +25,7 @@ namespace BMoney.Trade
             depend_macd = pool.GetIndicatorIndex("macd", "macd");
         }
         //是否会在平仓后立即做反向，没必要，做反向自动平仓
-        public TradeAction OnStick(CandlePool pool, int candleIndex, double money, decimal holdvol)
+        public TradeAction OnStick(CandlePool pool, int candleIndex, double money, double holdvol, double holdprice)
         {
             var candle = pool.GetCandle(candleIndex);
 
@@ -35,9 +36,44 @@ namespace BMoney.Trade
             double macd_m1 = IndicatorUtil.GetFromIndex(pool, depend_macd, candleIndex - 1);
             double macd = IndicatorUtil.GetFromIndex(pool, depend_macd, candleIndex);
             double dif = IndicatorUtil.GetFromIndex(pool, depend_dif, candleIndex);
+
+
+            //操作思路，一，止盈止损
+            //var price = candle.open;
+            //检查是否到达止盈，止损位置
+            if (holdprice > 0)
+            {
+                var winpoint = 0.05;
+                var losepoint = 0.03;
+                var scale = 20;
+                var fee = 0.0001;//资金费率是动态的
+                if (holdvol > 0) //持多
+                {
+
+                    double minv = holdprice * (1.0 - (losepoint / scale) + 0.0003 - fee);
+                    double maxv = holdprice * (1.0 + ((winpoint / scale) + 0.0003 + fee));
+
+                    if (candle.high > maxv || candle.low < minv)
+                        return TradeAction.Close; //做空平仓
+                }
+                else
+                {
+                    double minv = holdprice * (1.0 - (winpoint / scale) + 0.0003 - fee);
+                    double maxv = holdprice * (1.0 + ((losepoint / scale) + 0.0003 + fee));
+
+                    if (candle.high > maxv || candle.low < minv)
+                        return TradeAction.Close; //做空平仓
+                }
+              
+
+              
+            }
+
+            //操作思路三、细节，macd作为信号。
+
             if (macd < 0 && macd_m1 >= 0)
             {//下交叉，看跌
-                if (dif > 1.0)
+                if (dif > 0.5)
                 {
                     if (holdvol > 0)//持多仓
                     {
@@ -56,7 +92,7 @@ namespace BMoney.Trade
             else if (macd > 0 && macd_m1 <= 0)
             {
 
-                if (dif < -1.0)
+                if (dif < -0.5)
                 {
                     if (holdvol < 0)//持多仓
                     {
