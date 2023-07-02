@@ -80,7 +80,7 @@ namespace BMoney.Indicator
 
             var action = trader.OnStick(input, candleIndex, money, holdvol, holdprice);
 
-            var fee = 0.0000;// 0.0005;//万五手续费+上
+            var fee = 0.0005;// 0.0005;//万五手续费+上
 
             //先平仓
             if (holdvol < 0 && (action == TradeAction.GoLong || action == TradeAction.Close))
