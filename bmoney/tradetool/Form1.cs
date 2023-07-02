@@ -22,16 +22,25 @@ namespace tradetool
             InitTrade();
             InitPrice();
         }
-        Dictionary<string, decimal> wallet = new Dictionary<string, decimal>();
+        btrade.TradeTool tradetool;
+        btrade.Trader trader;
+
+        //Dictionary<string, decimal> wallet = new Dictionary<string, decimal>();
         async void InitTrade()
         {
-            await btrade.TradeTool.Init();
+            tradetool = new btrade.TradeTool();
+            await tradetool.Init();
+            trader = tradetool.CreateTrader("ethbusd");
+            await trader.Init();
 
-            this.webView21.Source = new Uri("https://www.binance.com/en/futures/" + btrade.TradeTool.Symbol);
-            var myip = "IP=" + btrade.TradeTool.IP;
+            this.webView21.Source = new Uri("https://www.binance.com/en/futures/" + trader.Symbol);
+            var myip = "IP=" + tradetool.IP;
             this.label1.Text = myip + " 这是一个币安下单助手，测试下单API的稳定性";
 
-            await UpdateWalletUI();
+            await tradetool.UpdateWallet();
+            await trader.UpdateOrder();
+
+            UpdateWalletUI();
 
             while (this.listBox2.Items.Count < 10)
                 this.listBox2.Items.Add("");
@@ -41,13 +50,13 @@ namespace tradetool
             }
 
 
-            btrade.TradeTool.OnKLine += (kdata) =>
+            trader.OnKLine += (kdata) =>
             {
                 //处理线程安全
                 Action<IBinanceStreamKlineData> onk = FillKLine;
                 this.Invoke(onk, kdata);
             };
-            btrade.TradeTool.OnWalletUpdate += () =>
+            tradetool.OnWalletUpdate += () =>
             {
                 Action onacc = () =>
                 {
@@ -55,7 +64,7 @@ namespace tradetool
                 };
                 this.Invoke(onacc);
             };
-            btrade.TradeTool.OnOrderUpdate += (s) =>
+            tradetool.OnOrderUpdate += (s) =>
             {
                 Action onacc = () =>
                 {
@@ -63,10 +72,10 @@ namespace tradetool
                 };
                 this.Invoke(onacc);
             };
-            fee = await btrade.TradeTool.GetFee();
+            fee = await trader.GetFee();
             this.listBox2.Items[2] = "资金费率=" + fee;
 
-            symbol = btrade.TradeTool.GetSymbol(btrade.TradeTool.Symbol);
+            symbol = tradetool.GetSymbol(trader.Symbol);
             PricePrecision = symbol.PricePrecision;
             NumPrecision = symbol.QuantityPrecision;
 
@@ -128,7 +137,7 @@ namespace tradetool
 
                 if (finalprice != 0)
                 {
-                    var maxcount = decimal.Round(wallet[symbol.QuoteAsset.ToLower()] * (decimal)scale / finalprice * (decimal)0.99, symbol.QuantityPrecision);
+                    var maxcount = decimal.Round(tradetool.wallet.GetBalance( symbol.QuoteAsset.ToLower()) * (decimal)scale / finalprice * (decimal)0.99, symbol.QuantityPrecision);
                     label8.Text = "数量 " + count + "/" + maxcount;
                     label7.Text = "最大可用 " + maxcount + symbol.BaseAsset + " = " + (finalprice * count) + symbol.QuoteAsset;
                 }
@@ -196,7 +205,7 @@ namespace tradetool
 
         private void button2_Click(object sender, EventArgs e)
         {
-            btrade.TradeTool.Go(longorshort, count, finalwinPrice, finallosePrice);
+            trader.MakeOrder(longorshort, count, finalwinPrice, finallosePrice);
         }
 
         private void textBox5_TextChanged(object sender, EventArgs e)
@@ -210,14 +219,14 @@ namespace tradetool
         private async void button1_Click(object sender, EventArgs e)
         {
             //socket 订阅接口不起作用，只能刷钱包了
-            await btrade.TradeTool.UpdateWallet();
-            await btrade.TradeTool.UpdateOrder(btrade.TradeTool.Symbol);
-            await UpdateWalletUI();
+            await tradetool.UpdateWallet();
+            await trader.UpdateOrder();
+            UpdateWalletUI();
 
         }
-        async Task UpdateWalletUI()
+        void UpdateWalletUI()
         {
-            var info = await btrade.TradeTool.GetWallet();
+            var info = tradetool.wallet;
 
             this.listBox1.Items.Clear();
             this.listBox1.Items.Add("CanTrade=" + info.CanTrade);
@@ -229,7 +238,7 @@ namespace tradetool
                 if (a.Available != 0 || a.Wallet != 0)
                 {
                     this.listBox1.Items.Add("余额 " + a.symbol + "=" + a.Available + "/" + a.Wallet);
-                    wallet[a.symbol.ToLower()] = a.Available;
+                    //wallet[a.symbol.ToLower()] = a.Available;
                 }
             }
             foreach (var p in info.positions.Values)

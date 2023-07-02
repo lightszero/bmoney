@@ -14,20 +14,29 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using static btrade.TradeTool;
 
 namespace btrade
 {
-    public static class TradeTool
+    public class TradeTool
     {
-        public static string IP
+        public string IP
         {
             get;
             private set;
         }
-        static BinanceSocketClient socket;
-        static BinanceClient rest;
-        public static async Task Init()
+        public BinanceSocketClient socket
+        {
+            get;
+            private set;
+        }
+        public BinanceClient rest
+        {
+            get;
+            private set;
+        }
+        public async Task Init()
         {
 
             WebClient wc = new WebClient();
@@ -50,30 +59,32 @@ namespace btrade
             StartUserInfoSocket();
 
 
-            SetTrade("ethbusd");
-            StartKLineSocket();
+            //SetTrade("ethbusd");
+            //StartKLineSocket();
 
 
         }
-        static Dictionary<string, BinanceFuturesUsdtSymbol> allsymbol;
-        public static string[] GetAllSymbols()
+        Dictionary<string, BinanceFuturesUsdtSymbol> allsymbol;
+        public string[] GetAllSymbols()
         {
             return allsymbol.Keys.ToArray();
         }
-        public static BinanceFuturesUsdtSymbol GetSymbol(string symbol)
+        public BinanceFuturesUsdtSymbol GetSymbol(string symbol)
         {
             return allsymbol[symbol];
         }
-        //得到费率
-        public static async Task<double> GetFee()
+        public Trader CreateTrader(string symbol)
         {
-            var p = await rest.UsdFuturesApi.ExchangeData.GetMarkPriceAsync(Symbol, CancellationToken.None);
-
-
-            return (double)p.Data.FundingRate.Value;
+            if (allsymbol.TryGetValue(symbol, out var v) == false)
+            {
+                return null;
+            }
+            Trader trader = new Trader(this, v);
+            return trader;
         }
+
         //用户账户信息
-        public static async Task<BinanceFuturesAccountInfo> GetInfo()
+        public async Task<BinanceFuturesAccountInfo> GetInfo()
         {
             var userinfo = await rest.UsdFuturesApi.Account.GetAccountInfoAsync();
             BinanceFuturesAccountInfo info = userinfo.Data;
@@ -88,6 +99,13 @@ namespace btrade
             public Dictionary<string, BalanceItem> balance = new Dictionary<string, BalanceItem>();
             //仓位
             public Dictionary<string, PositionItem> positions = new Dictionary<string, PositionItem>();
+
+            public decimal GetBalance(string symbol)
+            {
+                if (!balance.TryGetValue(symbol, out var value))
+                    return 0;
+                return value.Available;
+            }
         }
         public class BalanceItem
         {
@@ -110,14 +128,18 @@ namespace btrade
             public decimal priceStopMin;
             public Side side;
         }
-        static Wallet wallet;
-        public static async Task<Wallet> UpdateWallet()
+        public Wallet wallet
+        {
+            get;
+            private set;
+        }
+        public async Task<Wallet> UpdateWallet()
         {
             if (wallet == null)
                 wallet = new TradeTool.Wallet();
             if (wallet.balance == null)
                 wallet.balance = new Dictionary<string, BalanceItem>();
-            var info = await btrade.TradeTool.GetInfo();
+            var info = await this.GetInfo();
             wallet.balance.Clear();
             foreach (var a in info.Assets)
             {
@@ -139,64 +161,28 @@ namespace btrade
             }
             return wallet;
         }
-        public static async Task<Wallet> GetWallet()
-        {
-            if (wallet == null)
-                wallet = new TradeTool.Wallet();
-            if (wallet.balance == null)
-                wallet.balance = new Dictionary<string, BalanceItem>();
-            if (wallet.balance.Count == 0)
-                await UpdateWallet();
+        //public static String Symbol
+        //{
+        //    get;
+        //    private set;
+        //}
+        int pricePrecision;
+        //public  void SetTrade(string symbol)
+        //{
+        //    Symbol = symbol;
+        //    pricePrecision = allsymbol[symbol].PricePrecision;
+        //}
 
-            return wallet;
-        }
-        public static async Task UpdateOrder(string symbol)
-        {
-            var orders = await rest.UsdFuturesApi.Trading.GetOpenOrdersAsync(symbol);
-
-            foreach (var o in orders.Data)
-            {
-                var key = o.Symbol.ToLower();
-                if (wallet.positions.TryGetValue(key, out var pitem))
-                {
-                }
-                else
-                {
-                    pitem = new PositionItem();
-                    pitem.symbol = key;
-                    wallet.positions[key] = pitem;
-                }
-
-                if (o.Type == FuturesOrderType.TakeProfitMarket)
-                {
-                    pitem.priceStopMax = o.StopPrice.Value;
-                }
-                else if (o.Type == FuturesOrderType.StopMarket)
-                {
-                    pitem.priceStopMin = o.StopPrice.Value;
-                }
-
-            }
-
-        }
-        public static String Symbol
-        {
-            get;
-            private set;
-        }
-        static int pricePrecision;
-        public static void SetTrade(string symbol)
-        {
-            Symbol = symbol;
-            pricePrecision = allsymbol[symbol].PricePrecision;
-        }
-        public static event Action<IBinanceStreamKlineData> OnKLine;
         //socket接口 ，实时行情
-        public static event Action OnWalletUpdate;
+        public event Action OnWalletUpdate;
 
-        public static event Action<string> OnOrderUpdate;
-        //很遗憾，拿余额的接口不工作，没关系，我们还有rest版本
-        static void CBOnAccountUpdate(DataEvent<BinanceFuturesStreamAccountUpdate> e)
+        public event Action<string> OnOrderUpdate;
+        public void TriggerOrderUpdate(string symbol)
+        {
+            if (OnOrderUpdate != null)
+                OnOrderUpdate(symbol);
+        }
+        void CBOnAccountUpdate(DataEvent<BinanceFuturesStreamAccountUpdate> e)
         {
             if (wallet == null)
                 wallet = new TradeTool.Wallet();
@@ -243,7 +229,7 @@ namespace btrade
                 pitem.side = p.PositionSide == PositionSide.Long ? Side.Long : Side.Short;
             }
         }
-        static void CBOnOrderUpdate(DataEvent<BinanceFuturesStreamOrderUpdate> e)
+        void CBOnOrderUpdate(DataEvent<BinanceFuturesStreamOrderUpdate> e)
         {
             var key = e.Data.UpdateData.Symbol.ToLower();
             //好像也不咋关心这玩意儿
@@ -266,159 +252,14 @@ namespace btrade
             {
                 pitem.priceStopMin = e.Data.UpdateData.StopPrice;
             }
-            if (OnOrderUpdate != null)
-                OnOrderUpdate(key);
-        }
+            TriggerOrderUpdate(key);
 
-        public static async void Go(bool longorshort, decimal count, decimal priceWin, decimal priceLose)
-        {
-            //下单助手会先清理之前的，万一有个之前的止损单给我平仓了
-            var cresult = await rest.UsdFuturesApi.Trading.CancelAllOrdersAsync(Symbol);
-
-            if (longorshort)
-                MarkBuy((decimal)count, (decimal)priceWin, (decimal)priceLose);
-            else
-                MarkSell((decimal)count, (decimal)priceWin, (decimal)priceLose);
         }
 
 
-        //开多
-        static async void MarkBuy(decimal count, decimal priceWin, decimal priceLose)
-        {
 
 
-            BinanceFuturesBatchOrder[] orders = new BinanceFuturesBatchOrder[3];
-            {//主要订单
-                BinanceFuturesBatchOrder order = new BinanceFuturesBatchOrder();
-                order.Side = Binance.Net.Enums.OrderSide.Buy;
-                order.PositionSide = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
-                order.Type = FuturesOrderType.Market;//先开一个市价单
-                order.Symbol = Symbol;
-                order.Quantity = count;//量
-                order.WorkingType = WorkingType.Contract;
-                orders[0] = order;
-            }
-            {//止盈
-                BinanceFuturesBatchOrder order = new BinanceFuturesBatchOrder();
-                order.Side = Binance.Net.Enums.OrderSide.Sell;
-                order.PositionSide = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
-                order.Type = FuturesOrderType.TakeProfitMarket;//止盈
-                order.Symbol = Symbol;
-                order.Quantity = count;
-                order.StopPrice = priceWin;
-                order.WorkingType = WorkingType.Contract;
-                //没有平仓选项了，只能按照数量，回头又得跑一下实时
-                orders[1] = order;
-            }
-            {//止损
-                BinanceFuturesBatchOrder order = new BinanceFuturesBatchOrder();
-                order.Side = Binance.Net.Enums.OrderSide.Sell;
-                order.PositionSide = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
-                order.Type = FuturesOrderType.StopMarket;//止损
-                order.Symbol = Symbol;
-                order.Quantity = count;
-                order.StopPrice = priceLose;
-                order.WorkingType = WorkingType.Contract;
-                //没有平仓选项了，只能按照数量，回头又得跑一下实时
-                orders[2] = order;
-            }
-            var result = await rest.UsdFuturesApi.Trading.PlaceMultipleOrdersAsync(orders);
-            if (result.Success == false)
-            {
-                Console.WriteLine("下单失败" + result.Error.ToString());
-            }
-            else
-            {
-                Console.WriteLine("下单成功");
-            }
-        }
-        static async void MarkSell(decimal count, decimal priceWin, decimal priceLose)
-        {
-            BinanceFuturesBatchOrder[] orders = new BinanceFuturesBatchOrder[3];
-            {//主要订单
-                BinanceFuturesBatchOrder order = new BinanceFuturesBatchOrder();
-                order.Side = Binance.Net.Enums.OrderSide.Sell;
-                order.PositionSide = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
-                order.Type = FuturesOrderType.Market;//先开一个市价单
-                order.Symbol = Symbol;
-                order.Quantity = count;//量
-                order.WorkingType = WorkingType.Contract;
-                orders[0] = order;
-            }
-            {//止盈
-                BinanceFuturesBatchOrder order = new BinanceFuturesBatchOrder();
-                order.Side = Binance.Net.Enums.OrderSide.Buy;
-                order.PositionSide = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
-                order.Type = FuturesOrderType.TakeProfitMarket;//止盈
-                order.Symbol = Symbol;
-                order.Quantity = count;
-                order.StopPrice = priceWin;
-                order.WorkingType = WorkingType.Contract;
-                //没有平仓选项了，只能按照数量，回头又得跑一下实时
-                orders[1] = order;
-            }
-            {//止损
-                BinanceFuturesBatchOrder order = new BinanceFuturesBatchOrder();
-                order.Side = Binance.Net.Enums.OrderSide.Buy;
-                order.PositionSide = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
-                order.Type = FuturesOrderType.StopMarket;//止损
-                order.Symbol = Symbol;
-                order.Quantity = count;
-                order.StopPrice = priceLose;
-                order.WorkingType = WorkingType.Contract;
-                //没有平仓选项了，只能按照数量，回头又得跑一下实时
-                orders[2] = order;
-            }
-            var result = await rest.UsdFuturesApi.Trading.PlaceMultipleOrdersAsync(orders);
-            if (result.Success == false)
-            {
-                Console.WriteLine("下单失败" + result.Error.ToString());
-            }
-            else
-            {
-                Console.WriteLine("下单成功");
-            }
-        }
-        static string nowsymbol;
-        static async void StartKLineSocket()
-        {
-            while (true)
-            {
-                System.Threading.CancellationToken token = System.Threading.CancellationToken.None;
-                var result = await socket.UsdFuturesStreams.SubscribeToKlineUpdatesAsync(Symbol, Binance.Net.Enums.KlineInterval.OneMinute, (kdata) =>
-                {
-                    if (OnKLine != null)
-                    {
-                        OnKLine(kdata.Data);
-                    }
-                }, token);
-                if (result.Error != null)
-                {
-                    Console.Error.WriteLine(result.Error.Message);
-                    throw new Exception("socket 连接错误");
-                }
-
-                nowsymbol = Symbol;
-
-                bool closed = false;
-                result.Data.ConnectionClosed += () =>
-                {
-                    closed = true;
-                };
-                while (!closed)
-                {
-                    if (nowsymbol != Symbol)
-                    //if (!IsActive)
-                    {
-                        await result.Data.CloseAsync();
-                        //bLiveStop = true;
-                    }
-                    await Task.Delay(100);
-                }
-                await Task.Delay(1);
-            }
-        }
-        static async void StartUserInfoSocket()
+        async void StartUserInfoSocket()
         {
 
             System.Threading.CancellationToken token = System.Threading.CancellationToken.None;
