@@ -233,7 +233,7 @@ namespace tradetool
         private async void button2_Click(object sender, EventArgs e)
         {
             button2.Enabled = false;
-            await trader.MakeOrder(longorshort, count, finalwinPrice, finallosePrice);
+            await trader.MakeOrder_Safe(longorshort, count, finalwinPrice, finallosePrice);
         }
 
         private void textBox5_TextChanged(object sender, EventArgs e)
@@ -246,7 +246,6 @@ namespace tradetool
 
         private async void button1_Click(object sender, EventArgs e)
         {
-            //socket 订阅接口不起作用，只能刷钱包了
             await tradetool.UpdateWallet();
             await trader.UpdateOrder();
             UpdateWalletUI();
@@ -285,11 +284,11 @@ namespace tradetool
             var pos = tradetool.wallet.GetPosition(trader.Symbol);
             if (pos > 0)
             {
-                await trader.MakeOrder_Sell(pos);
+                await trader.MakeOrder_Close_Safe(false, pos);
             }
             else if (pos < 0)
             {
-                await trader.MakeOrder_Buy(-pos);
+                await trader.MakeOrder_Close_Safe(true, -pos);
             }
         }
     }

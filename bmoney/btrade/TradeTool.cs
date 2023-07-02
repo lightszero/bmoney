@@ -106,6 +106,13 @@ namespace btrade
                     return 0;
                 return value.Available;
             }
+            public decimal GetPosition(string symbol)
+            {
+                if(!positions.TryGetValue(symbol, out var value))
+                    return 0;
+                return value.count;
+            }
+            
         }
         public class BalanceItem
         {

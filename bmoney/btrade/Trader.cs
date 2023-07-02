@@ -93,20 +93,31 @@ namespace btrade
             return (double)p.Data.FundingRate.Value;
         }
 
-        public async void MakeOrder(bool longorshort, decimal count, decimal priceWin, decimal priceLose)
+        //安全下单接口
+        public async Task MakeOrder_Safe(bool longorshort, decimal count, decimal priceWin, decimal priceLose)
         {
             //下单助手会先清理之前的，万一有个之前的止损单给我平仓了
             var cresult = await _traderTool.rest.UsdFuturesApi.Trading.CancelAllOrdersAsync(Symbol);
 
             if (longorshort)
-                MakeBuyOrder_Limit((decimal)count, (decimal)priceWin, (decimal)priceLose);
+                await MakeOrder_Buy_Limit((decimal)count, (decimal)priceWin, (decimal)priceLose);
             else
-                MakeSellOrder_Limit((decimal)count, (decimal)priceWin, (decimal)priceLose);
+                await MakeOrder_Sell_Limit((decimal)count, (decimal)priceWin, (decimal)priceLose);
         }
-
-        async void MakeBuy(decimal count)
+        public async Task MakeOrder_Close_Safe(bool longorshort, decimal count)
         {
-            BinanceFuturesBatchOrder[] orders = new BinanceFuturesBatchOrder[3];
+            var cresult = await _traderTool.rest.UsdFuturesApi.Trading.CancelAllOrdersAsync(Symbol);
+            if (longorshort)
+                await MakeOrder_Buy((decimal)count);
+            else
+                await MakeOrder_Sell((decimal)count);
+        }
+        //一个买单，可以用来平仓空单。
+        async Task MakeOrder_Buy(decimal count)
+        {
+
+
+            BinanceFuturesBatchOrder[] orders = new BinanceFuturesBatchOrder[1];
             {//主要订单
                 BinanceFuturesBatchOrder order = new BinanceFuturesBatchOrder();
                 order.Side = Binance.Net.Enums.OrderSide.Buy;
@@ -127,14 +138,16 @@ namespace btrade
                 Console.WriteLine("下单成功");
             }
         }
-        async void MakeSell(decimal count)
+        //一个卖单，可以用来平仓多单
+        async Task MakeOrder_Sell(decimal count)
         {
-            BinanceFuturesBatchOrder[] orders = new BinanceFuturesBatchOrder[3];
+            BinanceFuturesBatchOrder[] orders = new BinanceFuturesBatchOrder[1];
             {//主要订单
                 BinanceFuturesBatchOrder order = new BinanceFuturesBatchOrder();
                 order.Side = Binance.Net.Enums.OrderSide.Sell;
                 order.PositionSide = Binance.Net.Enums.PositionSide.Both;//单向持仓模式选both
                 order.Type = FuturesOrderType.Market;//先开一个市价单
+
                 order.Symbol = Symbol;
                 order.Quantity = count;//量
                 order.WorkingType = WorkingType.Contract;
@@ -152,7 +165,7 @@ namespace btrade
         }
 
         //开多
-        async void MakeBuyOrder_Limit(decimal count, decimal priceWin, decimal priceLose)
+        async Task MakeOrder_Buy_Limit(decimal count, decimal priceWin, decimal priceLose)
         {
 
 
@@ -201,7 +214,7 @@ namespace btrade
                 Console.WriteLine("下单成功");
             }
         }
-        async void MakeSellOrder_Limit(decimal count, decimal priceWin, decimal priceLose)
+        async Task MakeOrder_Sell_Limit(decimal count, decimal priceWin, decimal priceLose)
         {
             BinanceFuturesBatchOrder[] orders = new BinanceFuturesBatchOrder[3];
             {//主要订单
