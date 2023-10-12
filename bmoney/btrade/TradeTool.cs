@@ -80,6 +80,7 @@ namespace btrade
                 return null;
             }
             Trader trader = new Trader(this, v);
+
             return trader;
         }
 

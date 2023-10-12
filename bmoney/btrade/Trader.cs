@@ -12,77 +12,21 @@ using static btrade.TradeTool;
 
 namespace btrade
 {
-    public class Trader
+    public class Trader: Candler
     {
 
         public Trader(TradeTool traderTool, BinanceFuturesUsdtSymbol symbol)
+            :base(traderTool,symbol)
         {
-            this._symbol = symbol;
-            this._traderTool = traderTool;
+            //this._symbol = symbol;
+            //this._traderTool = traderTool;
         }
-        BinanceFuturesUsdtSymbol _symbol;
-        TradeTool _traderTool;
-        public string Symbol
-        {
-            get
-            {
-                return _symbol.Name.ToLower();
-            }
-        }
-        public event Action<IBinanceStreamKlineData> OnKLine;
+        //BinanceFuturesUsdtSymbol _symbol;
+        //TradeTool _traderTool;
+
+        //public event Action<IBinanceStreamKlineData> OnKLine;
 
 
-        public async Task Stop()
-        {
-            await StopKLineSocket();
-        }
-        public async Task Init()
-        {
-            await StartKLineSocket();
-
-        }
-
-        UpdateSubscription socketSubscribe;
-        bool socketalive = false;
-        async Task StartKLineSocket()
-        {
-
-            System.Threading.CancellationToken token = System.Threading.CancellationToken.None;
-            var result = await _traderTool.socket.UsdFuturesApi.SubscribeToKlineUpdatesAsync(Symbol, Binance.Net.Enums.KlineInterval.OneMinute, (kdata) =>
-            {
-                if (OnKLine != null)
-                {
-                    OnKLine(kdata.Data);
-                }
-            }, token);
-            if (result.Error != null)
-            {
-                Console.Error.WriteLine(result.Error.Message);
-                throw new Exception("socket 连接错误");
-            }
-            socketSubscribe = result.Data;
-
-            //nowsymbol = Symbol;
-            socketalive = true;
-            socketSubscribe.ConnectionClosed += () =>
-            {
-                socketalive = false;
-                socketSubscribe = null;
-            };
-        }
-        async Task StopKLineSocket()
-        {
-            if (socketSubscribe != null)
-            {
-                await socketSubscribe.CloseAsync();
-                socketSubscribe = null;
-            }
-
-            while (socketalive)
-            {
-                await Task.Delay(100);
-            }
-        }
 
 
         //得到费率

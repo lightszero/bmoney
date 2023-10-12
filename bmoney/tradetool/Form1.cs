@@ -31,7 +31,7 @@ namespace tradetool
             tradetool = new btrade.TradeTool();
             await tradetool.Init();
             trader = tradetool.CreateTrader("ethbusd");
-            await trader.Init();
+            await trader.StartKLineSocket();
 
             this.webView21.Source = new Uri("https://www.binance.com/en/futures/" + trader.Symbol);
             var myip = "IP=" + tradetool.IP;
