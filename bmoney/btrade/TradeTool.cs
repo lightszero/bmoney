@@ -31,7 +31,7 @@ namespace btrade
             get;
             private set;
         }
-        public BinanceClient rest
+        public BinanceRestClient rest
         {
             get;
             private set;
@@ -43,9 +43,9 @@ namespace btrade
             var str = await wc.DownloadStringTaskAsync("http://ipinfo.io");
             IP = JObject.Parse(str)["ip"].ToString();
 
-            rest = new BinanceClient();
+            rest = new BinanceRestClient();
             socket = new BinanceSocketClient();
-            rest.SetApiCredentials(new Binance.Net.Objects.BinanceApiCredentials(key.apikey, key.secert));
+            rest.SetApiCredentials(new CryptoExchange.Net.Authentication.ApiCredentials(key.apikey, key.secert));
 
             var p2 = await rest.UsdFuturesApi.ExchangeData.GetExchangeInfoAsync(CancellationToken.None);
 
@@ -108,11 +108,11 @@ namespace btrade
             }
             public decimal GetPosition(string symbol)
             {
-                if(!positions.TryGetValue(symbol, out var value))
+                if (!positions.TryGetValue(symbol, out var value))
                     return 0;
                 return value.count;
             }
-            
+
         }
         public class BalanceItem
         {
@@ -272,30 +272,34 @@ namespace btrade
             System.Threading.CancellationToken token = System.Threading.CancellationToken.None;
             var listenkey = await rest.UsdFuturesApi.Account.StartUserStreamAsync();
             Console.WriteLine("got key=" + listenkey.Data);
-            var result = await socket.UsdFuturesStreams.SubscribeToUserDataUpdatesAsync(listenkey.Data, (e) =>
+            var result = await socket.UsdFuturesApi.SubscribeToUserDataUpdatesAsync(listenkey.Data, (e) =>
             {
-                Console.WriteLine("==SubscribeToUserDataUpdatesAsync==" + e.GetType().Name);
+                Console.WriteLine("==SubscribeToUserDataUpdatesAsync==BinanceFuturesStreamConfigUpdate" + e.GetType().Name);
             },
             (e) =>
             {
-                Console.WriteLine("==SubscribeToUserDataUpdatesAsync==" + e.GetType().Name);
+                Console.WriteLine("==SubscribeToUserDataUpdatesAsync==BinanceFuturesStreamMarginUpdate" + e.GetType().Name);
             },
             CBOnAccountUpdate, CBOnOrderUpdate,
              (e) =>
              {
-                 Console.WriteLine("==SubscribeToUserDataUpdatesAsync==" + e.GetType().Name);
+                 Console.WriteLine("==SubscribeToUserDataUpdatesAsync==BinanceStreamEvent" + e.GetType().Name);
              }
             ,
              (e) =>
             {
-                Console.WriteLine("==SubscribeToUserDataUpdatesAsync==" + e.GetType().Name);
+                Console.WriteLine("==SubscribeToUserDataUpdatesAsync==BinanceStrategyUpdate" + e.GetType().Name);
             }
             ,
              (e) =>
             {
-                Console.WriteLine("==SubscribeToUserDataUpdatesAsync==" + e.GetType().Name);
+                Console.WriteLine("==SubscribeToUserDataUpdatesAsync==BinanceGridUpdate" + e.GetType().Name);
             }
-            , token);
+            , (e) =>
+            {
+                Console.WriteLine("==SubscribeToUserDataUpdatesAsync==BinanceConditionOrderTriggerRejectUpdate" + e.GetType().Name);
+            },
+             token);
             if (result.Error != null)
             {
                 Console.Error.WriteLine(result.Error.Message);

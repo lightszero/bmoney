@@ -48,7 +48,7 @@ namespace btrade
         {
 
             System.Threading.CancellationToken token = System.Threading.CancellationToken.None;
-            var result = await _traderTool.socket.UsdFuturesStreams.SubscribeToKlineUpdatesAsync(Symbol, Binance.Net.Enums.KlineInterval.OneMinute, (kdata) =>
+            var result = await _traderTool.socket.UsdFuturesApi.SubscribeToKlineUpdatesAsync(Symbol, Binance.Net.Enums.KlineInterval.OneMinute, (kdata) =>
             {
                 if (OnKLine != null)
                 {
@@ -265,9 +265,10 @@ namespace btrade
         public async Task UpdateOrder()
         {
             var orders = await _traderTool.rest.UsdFuturesApi.Trading.GetOpenOrdersAsync(Symbol);
-
+            
             foreach (var o in orders.Data)
             {
+                
                 var key = o.Symbol.ToLower();
                 if (_traderTool.wallet.positions.TryGetValue(key, out var pitem))
                 {
