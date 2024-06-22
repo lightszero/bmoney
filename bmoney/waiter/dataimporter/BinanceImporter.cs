@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -29,6 +30,10 @@ namespace BMoney.data
                 btick = Binance.Net.Enums.KlineInterval.OneMinute;
             else if (ts == 5.0)
                 btick = Binance.Net.Enums.KlineInterval.FiveMinutes;
+            else if (ts == 60)
+            {
+                btick = Binance.Net.Enums.KlineInterval.OneHour;
+            }
             else
             {
                 throw new Exception("not support tick不是整数分钟.");
@@ -36,7 +41,7 @@ namespace BMoney.data
 
             if (vi % ((int)ts) != 0)
             {
-                throw new Exception("time不能被 tick整除.");
+                //throw new Exception("time不能被 tick整除.");
             }
             this.withLive = withlive;
             this.Tick = tick;
@@ -64,7 +69,7 @@ namespace BMoney.data
             this.pool = pool;
             bStop = false;
             var tickcount = (int)((DateTime.Now - beginTime) / Tick);
-            if(this.withLive)
+            if (this.withLive)
             {
                 //启动实时行情
                 SocketRealtimeDataWatcher();
@@ -72,16 +77,16 @@ namespace BMoney.data
             var time = beginTime;
             while (true)
             {
-                if(IsActive==false)
+                if (IsActive == false)
                 {
                     bStop = true;
                     break;
                 }
                 var need = historyCache.Length;
-                var intgot = await GetHistoryData(symbol, historyCache, time,btick, need);
+                var intgot = await GetHistoryData(symbol, historyCache, time, btick, need);
                 Console.WriteLine("BinanceImporter.GetHistoryData:" + time + " count=" + intgot);
                 time += Tick * intgot;
-                for(var i=0;i<intgot;i++)
+                for (var i = 0; i < intgot; i++)
                 {
                     pool.Push(historyCache[i], true);
                 }
@@ -100,7 +105,7 @@ namespace BMoney.data
                             var gottime = historyCache[intgot - 1].time;
                             if (gottime > cachetime)
                                 break;
-} 
+                        }
                     }
                 }
             }
@@ -123,7 +128,8 @@ namespace BMoney.data
             dataNotFinal = null;
             while (IsActive)
             {
-                var result = await socket.UsdFuturesStreams.SubscribeToKlineUpdatesAsync(symbol, Binance.Net.Enums.KlineInterval.OneMinute, (ev) =>
+             
+                var result = await socket.UsdFuturesStreams.SubscribeToKlineUpdatesAsync(symbol, btick, (ev) =>
                 {
                     var dat = ev.Data.Data;
                     var time = dat.OpenTime.ToLocalTime();
@@ -138,7 +144,7 @@ namespace BMoney.data
                     if (final)
                     {
                         liveCache.AddLast(candle);
-                        while(liveCache.Count>1000)
+                        while (liveCache.Count > 1000)
                         {
                             liveCache.RemoveFirst();
                         }
@@ -160,7 +166,7 @@ namespace BMoney.data
                 };
                 while (!closed)
                 {
-                    if(!IsActive)
+                    if (!IsActive)
                     {
                         await result.Data.CloseAsync();
                         bLiveStop = true;
@@ -185,7 +191,7 @@ namespace BMoney.data
         static BinanceSocketClient socket = new BinanceSocketClient();
 
 
-        static async Task<int> GetHistoryData(string symbol, Candle[] records, DateTime begin, Binance.Net.Enums.KlineInterval tick,int count = 60 * 12)
+        static async Task<int> GetHistoryData(string symbol, Candle[] records, DateTime begin, Binance.Net.Enums.KlineInterval tick, int count = 60 * 12)
         {
             begin = begin.ToUniversalTime();
             while (true)

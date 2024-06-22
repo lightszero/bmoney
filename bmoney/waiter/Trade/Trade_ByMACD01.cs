@@ -10,118 +10,124 @@ namespace BMoney.Trade
 {
     class Trade_ByMACD01 : ITrader
     {
+        //depend nothing,only price;
 
-        IndicatorValueIndex depend_ema12;
-        IndicatorValueIndex depend_dif;
-        IndicatorValueIndex depend_dea;
-        IndicatorValueIndex depend_macd;
+        //IndicatorValueIndex depend_ema12;
+        //IndicatorValueIndex depend_dif;
+        //IndicatorValueIndex depend_dea;
+        //IndicatorValueIndex depend_macd;
 
         //处理依赖
         public void OnReg(CandlePool pool)
         {
-            depend_ema12 = pool.GetIndicatorIndex("macd", "*ema(12)");
-            depend_dif = pool.GetIndicatorIndex("macd", "dif");
-            depend_dea = pool.GetIndicatorIndex("macd", "dea");
-            depend_macd = pool.GetIndicatorIndex("macd", "macd");
+            //depend_ema12 = pool.GetIndicatorIndex("macd", "*ema(12)");
+            //depend_dif = pool.GetIndicatorIndex("macd", "dif");
+            //depend_dea = pool.GetIndicatorIndex("macd", "dea");
+            //depend_macd = pool.GetIndicatorIndex("macd", "macd");
         }
         //是否会在平仓后立即做反向，没必要，做反向自动平仓
-        public TradeAction OnStick(CandlePool pool, int candleIndex, double money, double holdvol, double holdprice)
+
+        public TradeItem OnStick(CandlePool pool, int candleIndex, double money, double holdvol, double fee)
         {
-            var candle = pool.GetCandle(candleIndex);
-
-            if (candleIndex < 10)
-                return TradeAction.None;
-
-            TradeAction action = TradeAction.None;
-            double macd_m1 = IndicatorUtil.GetFromIndex(pool, depend_macd, candleIndex - 1);
-            double macd = IndicatorUtil.GetFromIndex(pool, depend_macd, candleIndex);
-            double dif = IndicatorUtil.GetFromIndex(pool, depend_dif, candleIndex);
-
-
-            //操作思路，一，止盈止损
-            //var price = candle.open;
-            //检查是否到达止盈，止损位置
-            if (holdprice > 0)
-            {
-                var winpoint = 0.05;
-                var losepoint = 0.03;
-                var scale = 20;
-                var fee = 0.0001;//资金费率是动态的
-                if (holdvol > 0) //持多
-                {
-
-                    double minv = holdprice * (1.0 - (losepoint / scale) + 0.0003 - fee);
-                    double maxv = holdprice * (1.0 + ((winpoint / scale) + 0.0003 + fee));
-
-                    if (candle.high > maxv || candle.low < minv)
-                        return TradeAction.Close; //做空平仓
-                }
-                else
-                {
-                    double minv = holdprice * (1.0 - (winpoint / scale) + 0.0003 - fee);
-                    double maxv = holdprice * (1.0 + ((losepoint / scale) + 0.0003 + fee));
-
-                    if (candle.high > maxv || candle.low < minv)
-                        return TradeAction.Close; //做空平仓
-                }
-              
-
-              
-            }
-
-            //操作思路三、细节，macd作为信号。
-
-            if (macd < 0 && macd_m1 >= 0)
-            {//下交叉，看跌
-                if (dif > 0.5)
-                {
-                    if (holdvol > 0)//持多仓
-                    {
-                        return TradeAction.Short;//做空 （自动平仓）
-                    }
-                    else if (holdvol == 0)//空仓
-                    {
-                        return TradeAction.Short;//做空
-                    }
-                }
-                else
-                {
-                    return TradeAction.Close;//平仓
-                }
-            }
-            else if (macd > 0 && macd_m1 <= 0)
-            {
-
-                if (dif < -0.5)
-                {
-                    if (holdvol < 0)//持多仓
-                    {
-                        return TradeAction.GoLong;//做多 （自动平仓）
-                    }
-                    else if (holdvol == 0)//空仓
-                    {
-                        return TradeAction.GoLong;//做空
-                    }
-                }
-                else
-                {
-                    return TradeAction.Close;//平仓
-                }
-            }
-
-            //简化逻辑，先不考虑要不要做多或着做空
-            //if (holdvol > 0)//现在持多仓
-            //{
-            //    //只考虑平不平
-            //}
-            //else if (holdvol < 0)//现在持空仓
-            //{
-            //    //只考虑平不平
-            //}
-
-
-            return action;
+            return TradeItem.None;
         }
+        //public TradeAction OnStick(CandlePool pool, int candleIndex, double money, double holdvol, double holdprice)
+        //{
+        //    var candle = pool.GetCandle(candleIndex);
+
+        //    if (candleIndex < 10)
+        //        return TradeAction.None;
+
+        //    TradeAction action = TradeAction.None;
+        //    double macd_m1 = IndicatorUtil.GetFromIndex(pool, depend_macd, candleIndex - 1);
+        //    double macd = IndicatorUtil.GetFromIndex(pool, depend_macd, candleIndex);
+        //    double dif = IndicatorUtil.GetFromIndex(pool, depend_dif, candleIndex);
+
+
+        //    //操作思路，一，止盈止损
+        //    //var price = candle.open;
+        //    //检查是否到达止盈，止损位置
+        //    if (holdprice > 0)
+        //    {
+        //        var winpoint = 0.05;
+        //        var losepoint = 0.03;
+        //        var scale = 20;
+        //        var fee = 0.0001;//资金费率是动态的
+        //        if (holdvol > 0) //持多
+        //        {
+
+        //            double minv = holdprice * (1.0 - (losepoint / scale) + 0.0003 - fee);
+        //            double maxv = holdprice * (1.0 + ((winpoint / scale) + 0.0003 + fee));
+
+        //            if (candle.high > maxv || candle.low < minv)
+        //                return TradeAction.Close; //做空平仓
+        //        }
+        //        else
+        //        {
+        //            double minv = holdprice * (1.0 - (winpoint / scale) + 0.0003 - fee);
+        //            double maxv = holdprice * (1.0 + ((losepoint / scale) + 0.0003 + fee));
+
+        //            if (candle.high > maxv || candle.low < minv)
+        //                return TradeAction.Close; //做空平仓
+        //        }
+
+
+
+        //    }
+
+        //    //操作思路三、细节，macd作为信号。
+
+        //    if (macd < 0 && macd_m1 >= 0)
+        //    {//下交叉，看跌
+        //        if (dif > 0.5)
+        //        {
+        //            if (holdvol > 0)//持多仓
+        //            {
+        //                return TradeAction.Short;//做空 （自动平仓）
+        //            }
+        //            else if (holdvol == 0)//空仓
+        //            {
+        //                return TradeAction.Short;//做空
+        //            }
+        //        }
+        //        else
+        //        {
+        //            return TradeAction.Close;//平仓
+        //        }
+        //    }
+        //    else if (macd > 0 && macd_m1 <= 0)
+        //    {
+
+        //        if (dif < -0.5)
+        //        {
+        //            if (holdvol < 0)//持多仓
+        //            {
+        //                return TradeAction.GoLong;//做多 （自动平仓）
+        //            }
+        //            else if (holdvol == 0)//空仓
+        //            {
+        //                return TradeAction.GoLong;//做空
+        //            }
+        //        }
+        //        else
+        //        {
+        //            return TradeAction.Close;//平仓
+        //        }
+        //    }
+
+        //    //简化逻辑，先不考虑要不要做多或着做空
+        //    //if (holdvol > 0)//现在持多仓
+        //    //{
+        //    //    //只考虑平不平
+        //    //}
+        //    //else if (holdvol < 0)//现在持空仓
+        //    //{
+        //    //    //只考虑平不平
+        //    //}
+
+
+        //    return action;
+        //}
     }
 
     //class Trade_ByMACD01 : Trader

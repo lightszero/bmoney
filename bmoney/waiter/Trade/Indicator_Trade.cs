@@ -23,13 +23,7 @@ namespace BMoney.Indicator
         }
         double money;
         double holdvol;//持仓
-        double holdprice;//持有价格
-        public double MoneyTotal
-        {
-            get;
-            private set;
 
-        }
         //有参构造，这个指标是特别的
         public Indicator_Trade(string name, ITrader trader)
         {
@@ -72,59 +66,33 @@ namespace BMoney.Indicator
         {
             trader.OnReg(input);
         }
-
+        public double CalcTotalMoney(CandlePool input, int indicatorIndex, int candleIndex)
+        {
+            var candle = input.GetCandle(candleIndex);
+            var price = (candle.high + candle.low) / 2;
+            return this.money + this.holdvol * price;
+        }
         public double[] CalcValues(CandlePool input, int indicatorIndex, int candleIndex)
         {
             var candle = input.GetCandle(candleIndex);
             var price = (candle.high + candle.low) / 2;
+            var fee = 0.001;//千1手续费
+            var action = trader.OnStick(input, candleIndex, money, holdvol, fee);
 
-            var action = trader.OnStick(input, candleIndex, money, holdvol, holdprice);
-
-            var fee = 0.0005;// 0.0005;//万五手续费+上
-
-            //先平仓
-            if (holdvol < 0 && (action == TradeAction.GoLong || action == TradeAction.Close))
+            if (action.direct == TradDirect.Buy)
             {
-                var tmoney = ((double)-holdvol * price);
-                money = money - tmoney;
-                money -= tmoney * fee;//扣万五手续费，上难度
-                holdvol = 0;
-                holdprice = 0;
-            }
-            if (holdvol > 0 && (action == TradeAction.Short || action == TradeAction.Close))
-            {
-                var tmoney = ((double)holdvol * price);
-                money = money + tmoney;
-                money -= tmoney * fee;//扣万五手续费，上难度
-                holdvol = 0;
-                holdprice = 0;
-            }
-
-            //判断做了什么操作，在这里模拟算钱
-            if (action == TradeAction.GoLong) //做多
-            {
-
-                var tmoney = price * 1.0;//先买一个
+                holdvol += action.value;
+                var tmoney = price * action.value;
                 money -= tmoney;
-
-                money -= tmoney * fee;//扣万五手续费，上难度
-                this.holdvol += 1.0;
-                this.holdprice = price;
+                money -= tmoney * fee;
             }
-            if (action == TradeAction.Short)//做空
+            else if (action.direct == TradDirect.Sell)
             {
-                var tmoney = price * 1.0;//保证金
-                this.holdvol -= 1.0;
-                this.holdprice = price;
-                money += tmoney; //借来的钱
-
-                money -= tmoney * fee;//扣万五手续费，上难度
+                holdvol -= action.value;
+                var tmoney = price * action.value;
+                money += tmoney;
+                money -= tmoney * fee;
             }
-
-
-
-
-            MoneyTotal = money + ((double)holdvol * price);
             return new double[] { (double)holdvol };
         }
 
@@ -150,7 +118,7 @@ namespace BMoney.Indicator
 
         public double[] CalcValues(CandlePool input, int indicatorIndex, int candleIndex)
         {
-            return new double[1] { trade.MoneyTotal };
+            return new double[1] { trade.CalcTotalMoney(input,indicatorIndex,candleIndex) };
         }
 
         public string[] GetInitParamDefine()

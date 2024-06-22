@@ -9,15 +9,28 @@ using System.Threading.Tasks;
 namespace BMoney.Trade
 {
     //一个Trader 是一个交易方法，根据该交易方法进行交易
-    public enum TradeAction
+    //public enum TradeAction
+    //{
+    //    None,
+    //    GoLong,//做多
+    //    Short,//做空
+    //    Close,//平仓
+
+    //    //CloseLong,//平多
+    //    //CloseShort,//平空
+    //}
+    public enum TradDirect
     {
         None,
-        GoLong,//做多
-        Short,//做空
-        Close,//平仓
+        Buy,
+        Sell,
+    }
+    public struct TradeItem
+    {
+        public TradDirect direct;
+        public double value;
+        public static readonly TradeItem None = new TradeItem { direct = TradDirect.None, value = 0 };
 
-        //CloseLong,//平多
-        //CloseShort,//平空
     }
     //public struct TradeItem
     //{
@@ -47,7 +60,17 @@ namespace BMoney.Trade
     public interface ITrader
     {
         void OnReg(CandlePool pool);
-        TradeAction OnStick(CandlePool pool, int candleIndex, double money, double holdvol, double holdprice);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pool"></param>
+        /// <param name="candleIndex"></param>
+        /// <param name="money">剩余资金</param>
+        /// <param name="holdvol">持仓</param>
+        /// <param name="fee">费率</param>
+        /// <returns></returns>
+        TradeItem OnStick(CandlePool pool, int candleIndex, double money, double holdvol, double fee);
 
         //public double InitMoney
         //{
